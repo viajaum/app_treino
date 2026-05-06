@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Meu Treino">
+    <title>Meu Treino - App</title>
+    
+    <!-- PWA Manifest para PWABuilder -->
+    <link rel="manifest" href="data:application/manifest+json,{
+      \"name\": \"Meu Treino Personalizado\",
+      \"short_name\": \"Treino\",
+      \"description\": \"Treino com voz e cronômetro automático\",
+      \"start_url\": \".\",
+      \"display\": \"standalone\",
+      \"theme_color\": \"#3b82f6\",
+      \"background_color\": \"#0a0f1e\",
+      \"orientation\": \"portrait\",
+      \"scope\": \".\",
+      \"icons\": [
+        {
+          \"src\": \"https://img.icons8.com/fluency/96/gym.png\",
+          \"sizes\": \"96x96\",
+          \"type\": \"image/png\"
+        },
+        {
+          \"src\": \"https://img.icons8.com/fluency/144/gym.png\",
+          \"sizes\": \"144x144\",
+          \"type\": \"image/png\"
+        },
+        {
+          \"src\": \"https://img.icons8.com/fluency/192/gym.png\",
+          \"sizes\": \"192x192\",
+          \"type\": \"image/png\"
+        },
+        {
+          \"src\": \"https://img.icons8.com/fluency/512/gym.png\",
+          \"sizes\": \"512x512\",
+          \"type\": \"image/png\"
+        }
+      ]
+    }">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #0a0f1e;
+            margin: 0;
+            min-height: 100vh;
+            padding: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #141b2b;
+            border-radius: 1.5rem;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            color: #eef4ff;
+            border-bottom: 2px solid #2d3a5e;
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        h2 {
+            font-size: 1.2rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .timer-panel {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0f1422 100%);
+            border-radius: 2rem;
+            padding: 1.8rem;
+            text-align: center;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59,130,246,0.3);
+            position: relative;
+        }
+        .timer-display {
+            font-size: 5.5rem;
+            font-weight: 900;
+            font-family: 'Courier New', 'Fira Mono', monospace;
+            background: #00000066;
+            border-radius: 2rem;
+            padding: 0.3rem 0.5rem;
+            color: #facc15;
+            letter-spacing: 8px;
+            text-shadow: 0 0 10px #facc15;
+            display: inline-block;
+            min-width: 300px;
+        }
+        
+        .total-timer {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #1e293b88;
+            backdrop-filter: blur(4px);
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            color: #94a3b8;
+            border: 1px solid #3b82f640;
+        }
+        .total-timer span {
+            font-weight: bold;
+            color: #60a5fa;
+            font-size: 1rem;
+        }
+        
+        .stage-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 20px 0 12px;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+            word-break: break-word;
+        }
+        .stage-category {
+            font-size: 1.1rem;
+            background: #1e293b;
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 40px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .round-info {
+            font-size: 1rem;
+            background: #3b82f620;
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 40px;
+            margin: 8px 0;
+            color: #60a5fa;
+            font-weight: bold;
+        }
+        
+        .progress {
+            background: #1e2a3e;
+            border-radius: 60px;
+            height: 14px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            width: 0%;
+            height: 100%;
+            transition: width 0.2s linear;
+            border-radius: 60px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #2d3a5e;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        button:active {
+            transform: scale(0.96);
+        }
+        .btn-primary { background: #3b82f6; box-shadow: 0 4px 12px #3b82f640; }
+        .btn-success { background: #10b981; }
+        .btn-danger { background: #dc2626; }
+        
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+        .countdown-number {
+            font-size: 8rem;
+            font-weight: 900;
+            color: #facc15;
+            text-shadow: 0 0 20px #facc15;
+            animation: bounce 0.5s ease;
+        }
+        .countdown-text {
+            font-size: 1.5rem;
+            color: white;
+            margin-top: 20px;
+        }
+        @keyframes bounce {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .config-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #0f1422;
+            padding: 15px;
+            border-radius: 1rem;
+            margin-bottom: 15px;
+        }
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+        .config-item label {
+            color: #cbd5e1;
+        }
+        .config-item input {
+            background: #1e2a3e;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 40px;
+            color: white;
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .etapa-section {
+            background: #0f1422;
+            border-radius: 1rem;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .exercise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .exercise-item {
+            background: #1e2a3e;
+            border-radius: 0.8rem;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            transition: all 0.2s;
+        }
+        .exercise-item.completed {
+            opacity: 0.5;
+            background: #0f1422;
+            text-decoration: line-through;
+        }
+        .exercise-item.current {
+            border: 2px solid #facc15;
+            background: #1e3a5f;
+            box-shadow: 0 0 12px #facc1540;
+        }
+        .exercise-item input[type="text"] {
+            flex: 2;
+            background: #0f1422;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+        .exercise-time {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #0f1422;
+            border-radius: 40px;
+            padding: 4px 8px;
+        }
+        .exercise-time span {
+            font-family: monospace;
+            font-size: 0.9rem;
+            min-width: 45px;
+            text-align: center;
+            font-weight: bold;
+            color: #facc15;
+        }
+        .time-btn {
+            background: #2d3a5e;
+            padding: 4px 10px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .move-buttons {
+            display: flex;
+            gap: 4px;
+        }
+        .move-btn {
+            background: #2d3a5e;
+            padding: 6px 10px;
+            font-size: 1rem;
+        }
+        .delete-btn {
+            background: #dc2626;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        .add-exercise {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        .add-exercise input {
+            flex: 2;
+            background: #1e2a3e;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .status-msg {
+            font-size: 0.9rem;
+            text-align: center;
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 40px;
+            margin-top: 12px;
+            font-weight: bold;
+            color: #94a3b8;
+        }
+        .voice-badge {
+            background: #8b5cf6;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .save-load {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        select {
+            background: #1e2a3e;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 40px;
+            color: white;
+            flex: 1;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #5f7bbf;
+            margin-top: 20px;
+        }
+        @media (max-width: 650px) {
+            .timer-display { font-size: 3.5rem; letter-spacing: 4px; min-width: auto; }
+            .stage-name { font-size: 1.5rem; }
+            .exercise-item { flex-direction: column; align-items: stretch; }
+            .config-bar { flex-direction: column; align-items: stretch; }
+            .total-timer { position: static; margin-bottom: 10px; display: inline-block; }
+            .move-buttons { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="timer-panel">
+            <div class="total-timer">⏱️ TOTAL: <span id="totalTimerDisplay">00:00</span></div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="stage-category" id="stageCategory">🔥 PREPARANDO</div>
+            <div class="stage-name" id="currentStage">Carregando treino...</div>
+            <div class="round-info" id="roundInfo"></div>
+            <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="controls">
+                <button id="startBtn" class="btn-primary">▶ INICIAR</button>
+                <button id="pauseBtn">⏸ PAUSAR</button>
+                <button id="resetBtn" class="btn-danger">⟳ RESETAR</button>
+            </div>
+        </div>
+        <div id="statusMessage" class="status-msg">
+            <span class="voice-badge">🔊 VOZ</span> 
+            Toque na tela para ativar o áudio | Avisa próximo exercício com 10s
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>⚙️ CONFIGURAÇÕES</h2>
+        </div>
+        <div class="config-bar">
+            <div class="config-item">
+                <label>🔄 Rodadas TREINO:</label>
+                <input type="number" id="treinoRoundsInput" min="1" max="99" value="3">
+            </div>
+            <div class="config-item">
+                <label>⏱️ Descanso entre rodadas (seg):</label>
+                <input type="number" id="restBetweenRoundsInput" min="0" max="600" value="60">
+            </div>
+            <div class="config-item">
+                <label>⏸️ Transição AQUECIMENTO→TREINO:</label>
+                <input type="number" id="restAquecimentoToTreinoInput" min="0" max="300" value="10">
+            </div>
+            <div class="config-item">
+                <label>⏸️ Transição TREINO→DESAQUECIMENTO:</label>
+                <input type="number" id="restTreinoToDesaquecimentoInput" min="0" max="300" value="10">
+            </div>
+            <button id="applyConfigBtn" class="btn-primary">APLICAR</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>🔥 AQUECIMENTO</h2>
+            <span style="font-size:0.7rem;">Use as setas ⇅ para mover</span>
+        </div>
+        <div id="aquecimentoList" class="exercise-list"></div>
+        <div class="add-exercise">
+            <input type="text" id="newAquecimentoName" placeholder="Ex: Polichinelo" value="Polichinelo">
+            <button id="addAquecimentoBtn" class="btn-success">+ ADICIONAR</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>💪 TREINO</h2>
+            <span class="voice-badge" id="treinoRepBadge">3x</span>
+        </div>
+        <div id="treinoList" class="exercise-list"></div>
+        <div class="add-exercise">
+            <input type="text" id="newTreinoName" placeholder="Ex: Supino" value="Supino">
+            <button id="addTreinoBtn" class="btn-success">+ ADICIONAR</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>🧘 DESAQUECIMENTO</h2>
+        </div>
+        <div id="desaquecimentoList" class="exercise-list"></div>
+        <div class="add-exercise">
+            <input type="text" id="newDesaquecimentoName" placeholder="Ex: Alongamento" value="Alongamento">
+            <button id="addDesaquecimentoBtn" class="btn-success">+ ADICIONAR</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>💾 SALVAR / CARREGAR</h2>
+        </div>
+        <div class="save-load">
+            <input type="text" id="treinoNome" placeholder="Nome do treino" value="Meu Treino">
+            <button id="saveTreinoBtn" class="btn-primary">💾 SALVAR</button>
+            <select id="loadSelect">
+                <option value="">-- Carregar --</option>
+            </select>
+            <button id="deleteTreinoBtn" class="btn-danger">🗑️ EXCLUIR</button>
+        </div>
+        <footer>🔊 Toque na tela para ativar o áudio | Use as setas ▲▼ para mover os exercícios</footer>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // DADOS DO TREINO
+    // ============================================
+    let aquecimento = [];
+    let treino = [];
+    let desaquecimento = [];
+    
+    let treinoRounds = 3;
+    let restBetweenRounds = 60;
+    let restAquecimentoToTreino = 10;
+    let restTreinoToDesaquecimento = 10;
+    
+    let fullWorkflow = [];
+    let currentStepIndex = 0;
+    let timeLeft = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let announcedNext = false;
+    
+    let totalTimeSeconds = 0;
+    let totalTimeLeft = 0;
+    
+    // Elementos DOM
+    const timerDisplay = document.getElementById('timerDisplay');
+    const totalTimerDisplay = document.getElementById('totalTimerDisplay');
+    const stageCategorySpan = document.getElementById('stageCategory');
+    const currentStageSpan = document.getElementById('currentStage');
+    const roundInfoSpan = document.getElementById('roundInfo');
+    const progressFill = document.getElementById('progressFill');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusMsg = document.getElementById('statusMessage');
+    
+    const aquecimentoListDiv = document.getElementById('aquecimentoList');
+    const treinoListDiv = document.getElementById('treinoList');
+    const desaquecimentoListDiv = document.getElementById('desaquecimentoList');
+    
+    const treinoRoundsInput = document.getElementById('treinoRoundsInput');
+    const restBetweenRoundsInput = document.getElementById('restBetweenRoundsInput');
+    const restAquecimentoToTreinoInput = document.getElementById('restAquecimentoToTreinoInput');
+    const restTreinoToDesaquecimentoInput = document.getElementById('restTreinoToDesaquecimentoInput');
+    const applyConfigBtn = document.getElementById('applyConfigBtn');
+    
+    const addAquecimentoBtn = document.getElementById('addAquecimentoBtn');
+    const newAquecimentoName = document.getElementById('newAquecimentoName');
+    const addTreinoBtn = document.getElementById('addTreinoBtn');
+    const newTreinoName = document.getElementById('newTreinoName');
+    const addDesaquecimentoBtn = document.getElementById('addDesaquecimentoBtn');
+    const newDesaquecimentoName = document.getElementById('newDesaquecimentoName');
+    
+    const saveTreinoBtn = document.getElementById('saveTreinoBtn');
+    const treinoNomeInput = document.getElementById('treinoNome');
+    const loadSelect = document.getElementById('loadSelect');
+    const deleteTreinoBtn = document.getElementById('deleteTreinoBtn');
+    
+    // ========== FUNÇÕES ==========
+    function formatTimeToText(seconds) {
+        if (seconds < 60) {
+            return `${seconds} segundos`;
+        }
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        if (secs === 0) {
+            return mins === 1 ? `${mins} minuto` : `${mins} minutos`;
+        }
+        return `${mins} minuto${mins > 1 ? 's' : ''} e ${secs} segundo${secs > 1 ? 's' : ''}`;
+    }
+    
+    // Ativar áudio no primeiro toque
+    let audioActivated = false;
+    function speak(text) {
+        if (!text || !audioActivated) return;
+        try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.1;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            window.speechSynthesis.speak(utterance);
+        } catch(e) { }
+    }
+    
+    function beep(frequency = 880, duration = 0.15, volume = 0.15) {
+        if (!audioActivated) return;
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.connect(gain);
+            gain.connect(audioCtx.destination);
+            oscillator.frequency.value = frequency;
+            gain.gain.value = volume;
+            oscillator.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            oscillator.stop(audioCtx.currentTime + duration);
+            audioCtx.resume();
+        } catch(e) { }
+    }
+    
+    function activateAudio() {
+        if (!audioActivated) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.resume();
+            audioActivated = true;
+            statusMsg.innerHTML = '<span class="voice-badge">🔊 VOZ ATIVA</span> Áudio ativado! Toque em INICIAR.';
+        }
+    }
+    document.body.addEventListener('touchstart', activateAudio, { once: true });
+    document.body.addEventListener('click', activateAudio, { once: true });
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        isRunning = false;
+    }
+    
+    function showCountdown(seconds, onComplete) {
+        const overlay = document.createElement('div');
+        overlay.className = 'countdown-overlay';
+        
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'countdown-number';
+        const textDiv = document.createElement('div');
+        textDiv.className = 'countdown-text';
+        
+        overlay.appendChild(numberDiv);
+        overlay.appendChild(textDiv);
+        document.body.appendChild(overlay);
+        
+        let count = seconds;
+        
+        function updateDisplay() {
+            numberDiv.textContent = count;
+            if (count === 0) {
+                textDiv.textContent = "VAI!";
+                beep(1000, 0.3, 0.2);
+            } else {
+                textDiv.textContent = "";
+                beep(880, 0.15, 0.12);
+            }
+        }
+        
+        updateDisplay();
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count >= 0) {
+                updateDisplay();
+            }
+            if (count < 0) {
+                clearInterval(interval);
+                overlay.remove();
+                if (onComplete) onComplete();
+            }
+        }, 1000);
+    }
+    
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function updateTotalTimerUI() {
+        totalTimerDisplay.textContent = formatTime(totalTimeLeft);
+    }
+    
+    function calculateTotalTime() {
+        let total = 0;
+        for (let i = 0; i < fullWorkflow.length; i++) {
+            total += fullWorkflow[i].seconds;
+        }
+        return total;
+    }
+    
+    function generateWorkflow() {
+        const workflow = [];
+        
+        for (let i = 0; i < aquecimento.length; i++) {
+            workflow.push({
+                type: 'exercise',
+                etapa: 'aquecimento',
+                name: aquecimento[i].name,
+                seconds: aquecimento[i].seconds,
+                round: null,
+                idx: i
+            });
+        }
+        
+        if (aquecimento.length > 0 && restAquecimentoToTreino > 0) {
+            workflow.push({
+                type: 'rest',
+                etapa: 'transicao',
+                name: `⏸️ Transição`,
+                seconds: restAquecimentoToTreino
+            });
+        }
+        
+        for (let round = 1; round <= treinoRounds; round++) {
+            for (let i = 0; i < treino.length; i++) {
+                workflow.push({
+                    type: 'exercise',
+                    etapa: 'treino',
+                    name: treino[i].name,
+                    seconds: treino[i].seconds,
+                    round: round,
+                    idx: i
+                });
+            }
+            if (round < treinoRounds && restBetweenRounds > 0) {
+                workflow.push({
+                    type: 'rest',
+                    etapa: 'descanso_entre_series',
+                    name: `⏸️ Descanso`,
+                    seconds: restBetweenRounds,
+                    round: round
+                });
+            }
+        }
+        
+        if (treino.length > 0 && restTreinoToDesaquecimento > 0) {
+            workflow.push({
+                type: 'rest',
+                etapa: 'transicao',
+                name: `⏸️ Transição`,
+                seconds: restTreinoToDesaquecimento
+            });
+        }
+        
+        for (let i = 0; i < desaquecimento.length; i++) {
+            workflow.push({
+                type: 'exercise',
+                etapa: 'desaquecimento',
+                name: desaquecimento[i].name,
+                seconds: desaquecimento[i].seconds,
+                round: null,
+                idx: i
+            });
+        }
+        
+        return workflow;
+    }
+    
+    function rebuildWorkflow() {
+        fullWorkflow = generateWorkflow();
+        totalTimeSeconds = calculateTotalTime();
+        totalTimeLeft = totalTimeSeconds;
+        updateTotalTimerUI();
+        
+        if (currentStepIndex >= fullWorkflow.length) {
+            currentStepIndex = fullWorkflow.length;
+        }
+        if (fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length && timeLeft === 0) {
+            timeLeft = fullWorkflow[currentStepIndex].seconds;
+        }
+        updateTimerUI();
+        renderAllLists();
+        document.getElementById('treinoRepBadge').innerText = `${treinoRounds}x`;
+    }
+    
+    function updateTimerUI() {
+        if (!fullWorkflow.length || currentStepIndex >= fullWorkflow.length) {
+            timerDisplay.textContent = formatTime(0);
+            currentStageSpan.textContent = "🏆 FIM!";
+            stageCategorySpan.textContent = "PARABÉNS!";
+            roundInfoSpan.textContent = "";
+            progressFill.style.width = "0%";
+            return;
+        }
+        const step = fullWorkflow[currentStepIndex];
+        timerDisplay.textContent = formatTime(timeLeft);
+        const totalTime = step.seconds;
+        const percent = (timeLeft / totalTime) * 100;
+        progressFill.style.width = `${percent}%`;
+        currentStageSpan.textContent = step.name;
+        
+        if (step.etapa === 'aquecimento') {
+            stageCategorySpan.textContent = '🔥 AQUECIMENTO';
+            roundInfoSpan.textContent = '';
+        } else if (step.etapa === 'treino') {
+            stageCategorySpan.textContent = `💪 TREINO`;
+            roundInfoSpan.textContent = `Rodada ${step.round}/${treinoRounds}`;
+        } else if (step.etapa === 'desaquecimento') {
+            stageCategorySpan.textContent = '🧘 DESAQUECIMENTO';
+            roundInfoSpan.textContent = '';
+        } else if (step.type === 'rest') {
+            stageCategorySpan.textContent = '⏸️ DESCANSO';
+            roundInfoSpan.textContent = '';
+        }
+    }
+    
+    function announceNextIfNeeded() {
+        if (timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !announcedNext) {
+            announcedNext = true;
+            const nextStep = fullWorkflow[currentStepIndex + 1];
+            if (nextStep) {
+                const timeText = formatTimeToText(nextStep.seconds);
+                let msg = "";
+                if (nextStep.type === 'rest') {
+                    msg = `Próximo: descanso, ${timeText}`;
+                } else {
+                    if (nextStep.etapa === 'treino') {
+                        msg = `Próximo: ${nextStep.name}, ${timeText}, rodada ${nextStep.round}`;
+                    } else {
+                        msg = `Próximo: ${nextStep.name}, ${timeText}`;
+                    }
+                }
+                speak(msg);
+                statusMsg.innerHTML = `🔊 ${msg}`;
+            }
+        }
+    }
+    
+    function startActualTimer() {
+        if (timerInterval) stopTimer();
+        if (currentStepIndex >= fullWorkflow.length) return;
+        
+        const step = fullWorkflow[currentStepIndex];
+        timeLeft = step.seconds;
+        updateTimerUI();
+        
+        isRunning = true;
+        timerInterval = setInterval(() => {
+            if (!isRunning) return;
+            
+            if (timeLeft > 0) {
+                timeLeft--;
+                totalTimeLeft--;
+                updateTimerUI();
+                updateTotalTimerUI();
+                
+                announceNextIfNeeded();
+                
+                if (timeLeft === 3) {
+                    beep(880, 0.2, 0.12);
+                    statusMsg.innerHTML = `⚠️ ${timeLeft}...`;
+                }
+                if (timeLeft === 2) beep(880, 0.2, 0.12);
+                if (timeLeft === 1) beep(880, 0.2, 0.12);
+            }
+            
+            if (timeLeft === 0 && currentStepIndex < fullWorkflow.length) {
+                stopTimer();
+                isRunning = false;
+                
+                if (currentStepIndex + 1 < fullWorkflow.length) {
+                    currentStepIndex++;
+                    announcedNext = false;
+                    updateTimerUI();
+                    renderAllLists();
+                    
+                    const nextStep = fullWorkflow[currentStepIndex];
+                    const timeText = formatTimeToText(nextStep.seconds);
+                    let msg = "";
+                    if (nextStep.type === 'rest') {
+                        msg = `Descanso, ${timeText}`;
+                    } else {
+                        if (nextStep.etapa === 'treino') {
+                            msg = `${nextStep.name}, ${timeText}, rodada ${nextStep.round}`;
+                        } else {
+                            msg = `${nextStep.name}, ${timeText}`;
+                        }
+                    }
+                    speak(msg);
+                    statusMsg.innerHTML = `🔊 ${msg}`;
+                    
+                    startActualTimer();
+                } else {
+                    currentStepIndex++;
+                    updateTimerUI();
+                    updateTotalTimerUI();
+                    renderAllLists();
+                    speak("Treino finalizado!");
+                    statusMsg.innerHTML = "🏆 TREINO FINALIZADO!";
+                    beep(1047, 0.5, 0.2);
+                }
+                renderAllLists();
+            }
+        }, 1000);
+    }
+    
+    function startFirstExerciseWithCountdown() {
+        if (currentStepIndex >= fullWorkflow.length) return;
+        
+        const step = fullWorkflow[currentStepIndex];
+        const timeText = formatTimeToText(step.seconds);
+        let msg = "";
+        
+        if (step.type === 'rest') {
+            msg = `Descanso, ${timeText}`;
+        } else {
+            if (step.etapa === 'treino') {
+                msg = `${step.name}, ${timeText}, rodada ${step.round} de ${treinoRounds}`;
+            } else {
+                msg = `${step.name}, ${timeText}`;
+            }
+        }
+        
+        speak(msg);
+        statusMsg.innerHTML = `🔊 ${msg}`;
+        
+        showCountdown(3, () => {
+            startActualTimer();
+        });
+    }
+    
+    function startTreino() {
+        if (!aquecimento.length && !treino.length && !desaquecimento.length) {
+            statusMsg.innerHTML = "❌ Adicione exercícios!";
+            return;
+        }
+        if (currentStepIndex >= fullWorkflow.length) resetTreino();
+        if (!isRunning && currentStepIndex < fullWorkflow.length) {
+            announcedNext = false;
+            startFirstExerciseWithCountdown();
+        }
+    }
+    
+    function resetTreino() {
+        stopTimer();
+        isRunning = false;
+        announcedNext = false;
+        rebuildWorkflow();
+        if (fullWorkflow.length > 0) {
+            currentStepIndex = 0;
+            timeLeft = fullWorkflow[0].seconds;
+        } else {
+            currentStepIndex = 0;
+            timeLeft = 0;
+        }
+        totalTimeLeft = totalTimeSeconds;
+        updateTotalTimerUI();
+        updateTimerUI();
+        renderAllLists();
+        statusMsg.innerHTML = "🔄 Resetado. Clique INICIAR.";
+    }
+    
+    // ========== RENDERIZAR LISTAS COM BOTÕES DE MOVER ==========
+    function renderExerciseList(container, exercises, listType) {
+        if (!container) return;
+        container.innerHTML = '';
+        if (exercises.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:15px; color:#8ca3cf;">➕ Clique em ADICIONAR</div>';
+            return;
+        }
+        
+        exercises.forEach((ex, idx) => {
+            const div = document.createElement('div');
+            div.className = 'exercise-item';
+            
+            let isCompleted = false;
+            let isCurrent = false;
+            
+            for (let i = 0; i < fullWorkflow.length; i++) {
+                const step = fullWorkflow[i];
+                if (step.etapa === listType && step.idx === idx) {
+                    if (listType !== 'treino' || step.round === null || step.round <= treinoRounds) {
+                        if (i < currentStepIndex) isCompleted = true;
+                        if (i === currentStepIndex) isCurrent = true;
+                    }
+                }
+            }
+            
+            if (isCompleted) div.classList.add('completed');
+            if (isCurrent) div.classList.add('current');
+            
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = ex.name;
+            nameInput.addEventListener('change', (e) => {
+                exercises[idx].name = e.target.value;
+                rebuildWorkflow();
+            });
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'exercise-time';
+            const minusBtn = document.createElement('button');
+            minusBtn.textContent = '-5';
+            minusBtn.className = 'time-btn';
+            minusBtn.addEventListener('click', () => {
+                exercises[idx].seconds = Math.max(5, exercises[idx].seconds - 5);
+                rebuildWorkflow();
+                renderAllLists();
+            });
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = `${exercises[idx].seconds}s`;
+            const plusBtn = document.createElement('button');
+            plusBtn.textContent = '+5';
+            plusBtn.className = 'time-btn';
+            plusBtn.addEventListener('click', () => {
+                exercises[idx].seconds += 5;
+                rebuildWorkflow();
+                renderAllLists();
+            });
+            timeDiv.appendChild(minusBtn);
+            timeDiv.appendChild(timeSpan);
+            timeDiv.appendChild(plusBtn);
+            
+            // Botões de mover
+            const moveDiv = document.createElement('div');
+            moveDiv.className = 'move-buttons';
+            
+            const upBtn = document.createElement('button');
+            upBtn.textContent = '▲';
+            upBtn.className = 'move-btn';
+            upBtn.disabled = idx === 0;
+            upBtn.addEventListener('click', () => {
+                if (idx > 0) {
+                    [exercises[idx-1], exercises[idx]] = [exercises[idx], exercises[idx-1]];
+                    rebuildWorkflow();
+                    renderAllLists();
+                }
+            });
+            
+            const downBtn = document.createElement('button');
+            downBtn.textContent = '▼';
+            downBtn.className = 'move-btn';
+            downBtn.disabled = idx === exercises.length - 1;
+            downBtn.addEventListener('click', () => {
+                if (idx < exercises.length - 1) {
+                    [exercises[idx+1], exercises[idx]] = [exercises[idx], exercises[idx+1]];
+                    rebuildWorkflow();
+                    renderAllLists();
+                }
+            });
+            
+            moveDiv.appendChild(upBtn);
+            moveDiv.appendChild(downBtn);
+            
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '🗑️';
+            delBtn.className = 'delete-btn';
+            delBtn.addEventListener('click', () => {
+                exercises.splice(idx, 1);
+                rebuildWorkflow();
+                renderAllLists();
+            });
+            
+            div.appendChild(nameInput);
+            div.appendChild(timeDiv);
+            div.appendChild(moveDiv);
+            div.appendChild(delBtn);
+            container.appendChild(div);
+        });
+    }
+    
+    function renderAllLists() {
+        renderExerciseList(aquecimentoListDiv, aquecimento, 'aquecimento');
+        renderExerciseList(treinoListDiv, treino, 'treino');
+        renderExerciseList(desaquecimentoListDiv, desaquecimento, 'desaquecimento');
+    }
+    
+    function applyConfig() {
+        treinoRounds = Math.max(1, parseInt(treinoRoundsInput.value) || 1);
+        restBetweenRounds = Math.max(0, parseInt(restBetweenRoundsInput.value) || 0);
+        restAquecimentoToTreino = Math.max(0, parseInt(restAquecimentoToTreinoInput.value) || 0);
+        restTreinoToDesaquecimento = Math.max(0, parseInt(restTreinoToDesaquecimentoInput.value) || 0);
+        
+        rebuildWorkflow();
+        if (!isRunning && fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length) {
+            timeLeft = fullWorkflow[currentStepIndex].seconds;
+            updateTimerUI();
+        }
+        totalTimeLeft = totalTimeSeconds;
+        updateTotalTimerUI();
+        statusMsg.innerHTML = `⚙️ ${treinoRounds}x treino, descanso entre séries: ${restBetweenRounds}s`;
+    }
+    
+    function addExercicio(lista, nomeInput) {
+        let name = nomeInput.value.trim();
+        if (!name) name = "Exercício";
+        lista.push({ name: name, seconds: 45 });
+        rebuildWorkflow();
+        nomeInput.value = "";
+        nomeInput.focus();
+    }
+    
+    function salvarTreino() {
+        const nome = treinoNomeInput.value.trim();
+        if (!nome) { alert("Digite um nome"); return; }
+        const data = {
+            aquecimento, treino, desaquecimento,
+            treinoRounds, restBetweenRounds, restAquecimentoToTreino, restTreinoToDesaquecimento
+        };
+        const salvos = JSON.parse(localStorage.getItem('treinoApp') || '{}');
+        salvos[nome] = data;
+        localStorage.setItem('treinoApp', JSON.stringify(salvos));
+        atualizarSelect();
+        statusMsg.innerHTML = `💾 "${nome}" salvo!`;
+    }
+    
+    function carregarTreino(nome) {
+        const salvos = JSON.parse(localStorage.getItem('treinoApp') || '{}');
+        const data = salvos[nome];
+        if (data) {
+            aquecimento = data.aquecimento || [];
+            treino = data.treino || [];
+            desaquecimento = data.desaquecimento || [];
+            treinoRounds = data.treinoRounds || 3;
+            restBetweenRounds = data.restBetweenRounds || 60;
+            restAquecimentoToTreino = data.restAquecimentoToTreino || 10;
+            restTreinoToDesaquecimento = data.restTreinoToDesaquecimento || 10;
+            
+            treinoRoundsInput.value = treinoRounds;
+            restBetweenRoundsInput.value = restBetweenRounds;
+            restAquecimentoToTreinoInput.value = restAquecimentoToTreino;
+            restTreinoToDesaquecimentoInput.value = restTreinoToDesaquecimento;
+            
+            stopTimer();
+            isRunning = false;
+            announcedNext = false;
+            rebuildWorkflow();
+            if (fullWorkflow.length > 0) {
+                currentStepIndex = 0;
+                timeLeft = fullWorkflow[0].seconds;
+            }
+            totalTimeLeft = totalTimeSeconds;
+            updateTotalTimerUI();
+            updateTimerUI();
+            treinoNomeInput.value = nome;
+            statusMsg.innerHTML = `📂 "${nome}" carregado!`;
+        } else {
+            alert("Treino não encontrado");
+        }
+    }
+    
+    function deletarTreino() {
+        const nome = loadSelect.value;
+        if (!nome) { alert("Selecione um treino"); return; }
+        if (confirm(`Excluir "${nome}"?`)) {
+            const salvos = JSON.parse(localStorage.getItem('treinoApp') || '{}');
+            delete salvos[nome];
+            localStorage.setItem('treinoApp', JSON.stringify(salvos));
+            atualizarSelect();
+            statusMsg.innerHTML = `🗑️ "${nome}" excluído`;
+        }
+    }
+    
+    function atualizarSelect() {
+        const salvos = JSON.parse(localStorage.getItem('treinoApp') || '{}');
+        loadSelect.innerHTML = '<option value="">-- Carregar --</option>';
+        for (let nome in salvos) {
+            const opt = document.createElement('option');
+            opt.value = nome;
+            opt.textContent = nome;
+            loadSelect.appendChild(opt);
+        }
+    }
+    
+    startBtn.onclick = startTreino;
+    pauseBtn.onclick = () => {
+        if (isRunning) {
+            stopTimer();
+            statusMsg.innerHTML = "⏸ Pausado. Clique INICIAR.";
+            window.speechSynthesis.cancel();
+        }
+    };
+    resetBtn.onclick = resetTreino;
+    applyConfigBtn.onclick = applyConfig;
+    
+    addAquecimentoBtn.onclick = () => addExercicio(aquecimento, newAquecimentoName);
+    addTreinoBtn.onclick = () => addExercicio(treino, newTreinoName);
+    addDesaquecimentoBtn.onclick = () => addExercicio(desaquecimento, newDesaquecimentoName);
+    
+    saveTreinoBtn.onclick = salvarTreino;
+    loadSelect.onchange = (e) => { if(e.target.value) carregarTreino(e.target.value); };
+    deleteTreinoBtn.onclick = deletarTreino;
+    
+    function init() {
+        aquecimento = [
+            { name: "Polichinelo", seconds: 60 },
+            { name: "Rotação de braços", seconds: 45 }
+        ];
+        treino = [
+            { name: "Supino", seconds: 45 },
+            { name: "Agachamento", seconds: 45 },
+            { name: "Remada", seconds: 45 }
+        ];
+        desaquecimento = [
+            { name: "Alongamento", seconds: 40 }
+        ];
+        treinoRounds = 3;
+        restBetweenRounds = 60;
+        restAquecimentoToTreino = 10;
+        restTreinoToDesaquecimento = 10;
+        
+        treinoRoundsInput.value = treinoRounds;
+        restBetweenRoundsInput.value = restBetweenRounds;
+        restAquecimentoToTreinoInput.value = restAquecimentoToTreino;
+        restTreinoToDesaquecimentoInput.value = restTreinoToDesaquecimento;
+        
+        rebuildWorkflow();
+        if (fullWorkflow.length > 0) {
+            currentStepIndex = 0;
+            timeLeft = fullWorkflow[0].seconds;
+        }
+        totalTimeLeft = totalTimeSeconds;
+        updateTotalTimerUI();
+        updateTimerUI();
+        statusMsg.innerHTML = "✅ App pronto! Toque na tela para ativar o áudio. Use as setas ▲▼ para mover os exercícios!";
+    }
+    init();
+    atualizarSelect();
+</script>
+</body>
+</html>
