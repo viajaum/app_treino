@@ -1,13 +1,13 @@
 // Service Worker para o App de Treino
 const CACHE_NAME = 'treino-app-v1';
 const urlsToCache = [
-  '.',
-  'index.html',
-  'manifest.json',
-  'icons/icon-96.png',
-  'icons/icon-144.png',
-  'icons/icon-192.png',
-  'icons/icon-512.png'
+  '/app_treino/',
+  '/app_treino/index.html',
+  '/app_treino/manifest.json',
+  '/app_treino/icons/icon-96.png',
+  '/app_treino/icons/icon-144.png',
+  '/app_treino/icons/icon-192.png',
+  '/app_treino/icons/icon-512.png'
 ];
 
 // Instala o Service Worker e cacheia os arquivos
