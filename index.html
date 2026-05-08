@@ -413,6 +413,7 @@ let timerInterval = null;
 let isRunning = false;
 let totalTimeSeconds = 0;
 let totalTimeLeft = 0;
+let hasAnnouncedNext = false;
 
 // ======================================
 // DOM
@@ -519,6 +520,22 @@ function setLockedMode(locked){
     }
 }
 
+function updateUINextExercise(){
+    // Mostra próximo exercício visualmente
+    if(currentStepIndex + 1 < fullWorkflow.length){
+        const nextStep = fullWorkflow[currentStepIndex + 1];
+        const timeText = formatTimeToText(nextStep.seconds);
+        if(nextStep.type === 'rest'){
+            nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO, ${timeText}`;
+        }else{
+            nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name}, ${timeText}`;
+            if(nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (rodada ${nextStep.round})`;
+        }
+    }else{
+        nextExerciseSpan.textContent = `⏩ Último!`;
+    }
+}
+
 function updateUI(){
     if(!fullWorkflow.length || currentStepIndex >= fullWorkflow.length){
         timerDisplay.textContent = formatTime(0);
@@ -536,19 +553,7 @@ function updateUI(){
     exerciseName.textContent = step.name;
     totalTimerDisplay.textContent = `⏱️ TOTAL: ${formatTime(totalTimeLeft)}`;
     
-    // Mostra próximo exercício visualmente
-    if(currentStepIndex + 1 < fullWorkflow.length){
-        const nextStep = fullWorkflow[currentStepIndex + 1];
-        const timeText = formatTimeToText(nextStep.seconds);
-        if(nextStep.type === 'rest'){
-            nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO - ${timeText}`;
-        }else{
-            nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name} - ${timeText}`;
-            if(nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (Rodada ${nextStep.round})`;
-        }
-    }else{
-        nextExerciseSpan.textContent = `⏩ Último exercício!`;
-    }
+    updateUINextExercise();
     
     if(step.etapa === 'aquecimento'){
         stageCategory.textContent = '🔥 AQUECIMENTO';
@@ -564,6 +569,29 @@ function updateUI(){
         roundInfo.textContent = '';
     }
     renderAllLists();
+}
+
+// ======================================
+// AVISO DO PRÓXIMO - FRASE SIMPLES
+// ======================================
+
+function announceNextIfNeeded(){
+    // Avisa apenas quando faltam 10 segundos e ainda não avisou
+    if(timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext){
+        hasAnnouncedNext = true;
+        const nextStep = fullWorkflow[currentStepIndex + 1];
+        if(nextStep){
+            const timeText = formatTimeToText(nextStep.seconds);
+            let msg = '';
+            if(nextStep.type === 'rest'){
+                msg = `Próximo: descanso, ${timeText}`;
+            }else{
+                msg = `Próximo: ${nextStep.name}, ${timeText}`;
+            }
+            speak(msg);
+            statusMessage.innerHTML = `🔊 ${msg}`;
+        }
+    }
 }
 
 // ======================================
@@ -625,7 +653,7 @@ function generateWorkflow(){
         workflow.push({
             type: 'rest',
             etapa: 'transicao',
-            name: '⏸️ Transição para o TREINO',
+            name: 'Transição',
             seconds: restAquecimentoToTreino
         });
     }
@@ -645,7 +673,7 @@ function generateWorkflow(){
             workflow.push({
                 type: 'rest',
                 etapa: 'descanso_entre_series',
-                name: '🔄 Descanso entre rodadas',
+                name: 'Descanso',
                 seconds: restBetweenRounds,
                 round: round
             });
@@ -656,7 +684,7 @@ function generateWorkflow(){
         workflow.push({
             type: 'rest',
             etapa: 'transicao',
-            name: '⏸️ Transição para o DESAQUECIMENTO',
+            name: 'Transição',
             seconds: restTreinoToDesaquecimento
         });
     }
@@ -696,7 +724,9 @@ function startActualTimer(){
     if(timerInterval) stopTimer();
     if(currentStepIndex >= fullWorkflow.length) return;
     
-    timeLeft = fullWorkflow[currentStepIndex].seconds;
+    const step = fullWorkflow[currentStepIndex];
+    timeLeft = step.seconds;
+    hasAnnouncedNext = false;
     updateUI();
     isRunning = true;
     setLockedMode(true);
@@ -709,6 +739,11 @@ function startActualTimer(){
             totalTimeLeft--;
             updateUI();
             
+            // Avisa próximo com 10 segundos de antecedência
+            if(timeLeft === 10){
+                announceNextIfNeeded();
+            }
+            
             if(timeLeft === 3) beep();
             if(timeLeft === 2) beep();
             if(timeLeft === 1) beep();
@@ -720,26 +755,11 @@ function startActualTimer(){
             
             if(currentStepIndex + 1 < fullWorkflow.length){
                 currentStepIndex++;
-                timeLeft = fullWorkflow[currentStepIndex].seconds;
-                updateUI();
-                
-                const nextStep = fullWorkflow[currentStepIndex];
-                const timeText = formatTimeToText(nextStep.seconds);
-                let msg = '';
-                if(nextStep.type === 'rest'){
-                    msg = `Descanso, ${timeText}`;
-                }else{
-                    msg = `${nextStep.name}, ${timeText}`;
-                    if(nextStep.etapa === 'treino') msg += `, rodada ${nextStep.round}`;
-                }
-                speak(msg);
-                statusMessage.innerHTML = `🔊 ${msg}`;
-                
                 startActualTimer();
             }else{
                 currentStepIndex++;
                 updateUI();
-                speak("Treino finalizado! Parabéns!");
+                speak("Treino finalizado!");
                 statusMessage.innerHTML = "🏆 TREINO FINALIZADO!";
                 beep(1200, 0.5);
                 setLockedMode(false);
@@ -752,17 +772,8 @@ function startActualTimer(){
 function startFirstExercise(){
     if(currentStepIndex >= fullWorkflow.length) return;
     
-    const step = fullWorkflow[currentStepIndex];
-    const timeText = formatTimeToText(step.seconds);
-    let msg = '';
-    if(step.type === 'rest'){
-        msg = `Descanso, ${timeText}`;
-    }else{
-        msg = `${step.name}, ${timeText}`;
-        if(step.etapa === 'treino') msg += `, rodada ${step.round} de ${treinoRounds}`;
-    }
-    speak(msg);
-    statusMessage.innerHTML = `🔊 ${msg}`;
+    // Mostra o primeiro exercício visualmente
+    updateUI();
     
     showCountdown(() => {
         startActualTimer();
@@ -794,9 +805,10 @@ function resetTreino(){
             stopTimer();
             isRunning = false;
             setLockedMode(false);
+            currentStepIndex = 0;
+            hasAnnouncedNext = false;
             rebuildWorkflow();
             if(fullWorkflow.length > 0){
-                currentStepIndex = 0;
                 timeLeft = fullWorkflow[0].seconds;
             }
             totalTimeLeft = totalTimeSeconds;
@@ -808,9 +820,10 @@ function resetTreino(){
         stopTimer();
         isRunning = false;
         setLockedMode(false);
+        currentStepIndex = 0;
+        hasAnnouncedNext = false;
         rebuildWorkflow();
         if(fullWorkflow.length > 0){
-            currentStepIndex = 0;
             timeLeft = fullWorkflow[0].seconds;
         }
         totalTimeLeft = totalTimeSeconds;
@@ -1026,9 +1039,10 @@ function carregarTreino(nome){
         stopTimer();
         isRunning = false;
         setLockedMode(false);
+        currentStepIndex = 0;
+        hasAnnouncedNext = false;
         rebuildWorkflow();
         if(fullWorkflow.length > 0){
-            currentStepIndex = 0;
             timeLeft = fullWorkflow[0].seconds;
         }
         totalTimeLeft = totalTimeSeconds;
