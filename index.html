@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Treino Profissional - Lista de Exercícios</title>
+<title>Treino Profissional - Protegido</title>
 
 <style>
 
@@ -112,6 +112,12 @@ button{
     cursor:pointer;
     color:white;
     font-weight:bold;
+    transition:opacity 0.2s;
+}
+
+button:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
 }
 
 .btn-primary{ background:#2563eb; }
@@ -166,15 +172,6 @@ button{
     padding:15px;
     margin-bottom:15px;
     text-align:center;
-}
-
-.file-input-label{
-    background:#3b82f6;
-    padding:12px 24px;
-    border-radius:40px;
-    cursor:pointer;
-    display:inline-block;
-    font-weight:bold;
 }
 
 .file-info{
@@ -245,6 +242,41 @@ button{
     text-decoration:line-through;
 }
 
+/* Diálogo de confirmação */
+.confirm-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #141b2b;
+    border-radius: 24px;
+    padding: 24px;
+    z-index: 2000;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    border: 2px solid #facc15;
+    min-width: 250px;
+}
+.confirm-dialog p {
+    color: white;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+.confirm-dialog button {
+    margin: 0 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 1999;
+}
+
 </style>
 </head>
 
@@ -253,7 +285,7 @@ button{
 <div class="container">
 
 <div class="lock-indicator" id="lockIndicator">
-🔒 TREINO EM ANDAMENTO
+🔒 TREINO EM ANDAMENTO - APENAS PAUSAR FUNCIONA
 </div>
 
 <div class="card">
@@ -353,6 +385,43 @@ const lockIndicator = document.getElementById('lockIndicator');
 const exerciseListCard = document.getElementById('exerciseListCard');
 const exerciseListContainer = document.getElementById('exerciseListContainer');
 
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const importJsonBtn = document.getElementById('importJsonBtn');
+const jsonFileInput = document.getElementById('jsonFileInput');
+
+// ======================================
+// DIÁLOGO DE CONFIRMAÇÃO
+// ======================================
+
+function showConfirm(message, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+        <p>${message}</p>
+        <button id="confirmYes" class="btn-primary">SIM</button>
+        <button id="confirmNo" class="btn-danger">NÃO</button>
+    `;
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+    
+    document.getElementById('confirmYes').onclick = () => {
+        overlay.remove();
+        dialog.remove();
+        onConfirm();
+    };
+    
+    document.getElementById('confirmNo').onclick = () => {
+        overlay.remove();
+        dialog.remove();
+    };
+}
+
 // ======================================
 // ÁUDIO
 // ======================================
@@ -424,8 +493,16 @@ function stopTimer(){
 function setLockedMode(locked){
     if(locked && isRunning){
         lockIndicator.classList.add('active');
+        startBtn.disabled = true;
+        resetBtn.disabled = true;
+        importJsonBtn.disabled = true;
+        statusMessage.innerHTML = '🔒 Treino rodando - apenas PAUSAR funciona';
     }else{
         lockIndicator.classList.remove('active');
+        startBtn.disabled = false;
+        resetBtn.disabled = false;
+        importJsonBtn.disabled = false;
+        statusMessage.innerHTML = '✏️ Edição liberada';
     }
 }
 
@@ -749,27 +826,32 @@ function startTreino(){
 
 function pauseTreino(){
     if(!isRunning) return;
-    stopTimer();
-    setLockedMode(false);
-    window.speechSynthesis.cancel();
-    statusMessage.innerHTML = "⏸ Pausado";
+    showConfirm("PAUSAR O TREINO?", () => {
+        stopTimer();
+        setLockedMode(false);
+        window.speechSynthesis.cancel();
+        statusMessage.innerHTML = "⏸ Treino pausado";
+        speak("Treino pausado");
+    });
 }
 
 function resetTreino(){
     if(!treinoCarregado) return;
     if(isRunning){
-        stopTimer();
-        isRunning = false;
-        setLockedMode(false);
-        currentStepIndex = 0;
-        hasAnnouncedNext = false;
-        if(fullWorkflow.length > 0){
-            timeLeft = fullWorkflow[0].seconds;
-        }
-        totalTimeLeft = totalTimeSeconds;
-        updateUI();
-        statusMessage.innerHTML = "🔄 Resetado";
-        speak("Treino resetado");
+        showConfirm("RESETAR O TREINO?", () => {
+            stopTimer();
+            isRunning = false;
+            setLockedMode(false);
+            currentStepIndex = 0;
+            hasAnnouncedNext = false;
+            if(fullWorkflow.length > 0){
+                timeLeft = fullWorkflow[0].seconds;
+            }
+            totalTimeLeft = totalTimeSeconds;
+            updateUI();
+            statusMessage.innerHTML = "🔄 Treino resetado";
+            speak("Treino resetado");
+        });
     }else{
         stopTimer();
         isRunning = false;
@@ -781,7 +863,7 @@ function resetTreino(){
         }
         totalTimeLeft = totalTimeSeconds;
         updateUI();
-        statusMessage.innerHTML = "🔄 Resetado";
+        statusMessage.innerHTML = "🔄 Treino resetado";
     }
 }
 
@@ -842,11 +924,15 @@ function importFromJSON(jsonData){
 // EVENTOS
 // ======================================
 
-document.getElementById('importJsonBtn').onclick = () => {
-    document.getElementById('jsonFileInput').click();
+importJsonBtn.onclick = () => {
+    if(isRunning){
+        statusMessage.innerHTML = "⏸ Pause o treino antes de carregar outro arquivo!";
+        return;
+    }
+    jsonFileInput.click();
 };
 
-document.getElementById('jsonFileInput').onchange = (e) => {
+jsonFileInput.onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
@@ -857,9 +943,9 @@ document.getElementById('jsonFileInput').onchange = (e) => {
     e.target.value = '';
 };
 
-document.getElementById('startBtn').onclick = startTreino;
-document.getElementById('pauseBtn').onclick = pauseTreino;
-document.getElementById('resetBtn').onclick = resetTreino;
+startBtn.onclick = startTreino;
+pauseBtn.onclick = pauseTreino;
+resetBtn.onclick = resetTreino;
 
 // ======================================
 // INIT
