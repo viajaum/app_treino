@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#3b82f6">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Meu Treino">
     <title>Meu Treino - App</title>
     
     <link rel="manifest" href="manifest.json">
@@ -15,6 +12,7 @@
         * {
             box-sizing: border-box;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            user-select: none; /* Evita selecionar texto */
         }
         body {
             background: #0a0f1e;
@@ -33,6 +31,11 @@
             padding: 1.2rem;
             margin-bottom: 1rem;
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: opacity 0.3s;
+        }
+        .card.locked {
+            opacity: 0.6;
+            pointer-events: none; /* Bloqueia interação */
         }
         .card-header {
             display: flex;
@@ -162,9 +165,15 @@
         button:active {
             transform: scale(0.96);
         }
+        button:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
         .btn-primary { background: #3b82f6; box-shadow: 0 4px 12px #3b82f640; }
         .btn-success { background: #10b981; }
         .btn-danger { background: #dc2626; }
+        .btn-warning { background: #f59e0b; }
         
         .countdown-overlay {
             position: fixed;
@@ -227,6 +236,9 @@
             text-align: center;
             font-weight: bold;
         }
+        .config-item input:disabled {
+            opacity: 0.5;
+        }
         
         .etapa-section {
             background: #0f1422;
@@ -271,6 +283,9 @@
             color: white;
             font-size: 0.9rem;
             min-width: 120px;
+        }
+        .exercise-item input:disabled {
+            opacity: 0.5;
         }
         .exercise-time {
             display: flex;
@@ -355,6 +370,9 @@
             color: white;
             flex: 1;
         }
+        select:disabled {
+            opacity: 0.5;
+        }
         footer {
             text-align: center;
             font-size: 0.7rem;
@@ -369,10 +387,33 @@
             .total-timer { position: static; margin-bottom: 10px; display: inline-block; }
             .move-buttons { justify-content: center; }
         }
+        
+        /* Indicador de bloqueio */
+        .lock-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .lock-indicator.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
 <div class="container">
+    <!-- Indicador de modo bloqueado -->
+    <div id="lockIndicator" class="lock-indicator">🔒 Modo treino ativo - tela travada</div>
+    
     <div class="card">
         <div class="timer-panel">
             <div class="total-timer">⏱️ TOTAL: <span id="totalTimerDisplay">00:00</span></div>
@@ -389,83 +430,85 @@
         </div>
         <div id="statusMessage" class="status-msg">
             <span class="voice-badge">🔊 VOZ</span> 
-            Toque na tela para ativar o áudio | Avisa próximo exercício com 10s
+            Toque na tela para ativar o áudio
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h2>⚙️ CONFIGURAÇÕES</h2>
-        </div>
-        <div class="config-bar">
-            <div class="config-item">
-                <label>🔄 Rodadas TREINO:</label>
-                <input type="number" id="treinoRoundsInput" min="1" max="99" value="3">
+    <div id="editableCards">
+        <div class="card">
+            <div class="card-header">
+                <h2>⚙️ CONFIGURAÇÕES</h2>
             </div>
-            <div class="config-item">
-                <label>⏱️ Descanso entre rodadas (seg):</label>
-                <input type="number" id="restBetweenRoundsInput" min="0" max="600" value="60">
+            <div class="config-bar">
+                <div class="config-item">
+                    <label>🔄 Rodadas TREINO:</label>
+                    <input type="number" id="treinoRoundsInput" min="1" max="99" value="3">
+                </div>
+                <div class="config-item">
+                    <label>⏱️ Descanso entre rodadas (seg):</label>
+                    <input type="number" id="restBetweenRoundsInput" min="0" max="600" value="60">
+                </div>
+                <div class="config-item">
+                    <label>⏸️ Transição AQUECIMENTO→TREINO:</label>
+                    <input type="number" id="restAquecimentoToTreinoInput" min="0" max="300" value="10">
+                </div>
+                <div class="config-item">
+                    <label>⏸️ Transição TREINO→DESAQUECIMENTO:</label>
+                    <input type="number" id="restTreinoToDesaquecimentoInput" min="0" max="300" value="10">
+                </div>
+                <button id="applyConfigBtn" class="btn-primary">APLICAR</button>
             </div>
-            <div class="config-item">
-                <label>⏸️ Transição AQUECIMENTO→TREINO:</label>
-                <input type="number" id="restAquecimentoToTreinoInput" min="0" max="300" value="10">
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>🔥 AQUECIMENTO</h2>
+                <span style="font-size:0.7rem;">Use as setas ⇅ para mover</span>
             </div>
-            <div class="config-item">
-                <label>⏸️ Transição TREINO→DESAQUECIMENTO:</label>
-                <input type="number" id="restTreinoToDesaquecimentoInput" min="0" max="300" value="10">
+            <div id="aquecimentoList" class="exercise-list"></div>
+            <div class="add-exercise">
+                <input type="text" id="newAquecimentoName" placeholder="Ex: Polichinelo" value="Polichinelo">
+                <button id="addAquecimentoBtn" class="btn-success">+ ADICIONAR</button>
             </div>
-            <button id="applyConfigBtn" class="btn-primary">APLICAR</button>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h2>🔥 AQUECIMENTO</h2>
-            <span style="font-size:0.7rem;">Use as setas ⇅ para mover</span>
+        <div class="card">
+            <div class="card-header">
+                <h2>💪 TREINO</h2>
+                <span class="voice-badge" id="treinoRepBadge">3x</span>
+            </div>
+            <div id="treinoList" class="exercise-list"></div>
+            <div class="add-exercise">
+                <input type="text" id="newTreinoName" placeholder="Ex: Supino" value="Supino">
+                <button id="addTreinoBtn" class="btn-success">+ ADICIONAR</button>
+            </div>
         </div>
-        <div id="aquecimentoList" class="exercise-list"></div>
-        <div class="add-exercise">
-            <input type="text" id="newAquecimentoName" placeholder="Ex: Polichinelo" value="Polichinelo">
-            <button id="addAquecimentoBtn" class="btn-success">+ ADICIONAR</button>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h2>💪 TREINO</h2>
-            <span class="voice-badge" id="treinoRepBadge">3x</span>
+        <div class="card">
+            <div class="card-header">
+                <h2>🧘 DESAQUECIMENTO</h2>
+            </div>
+            <div id="desaquecimentoList" class="exercise-list"></div>
+            <div class="add-exercise">
+                <input type="text" id="newDesaquecimentoName" placeholder="Ex: Alongamento" value="Alongamento">
+                <button id="addDesaquecimentoBtn" class="btn-success">+ ADICIONAR</button>
+            </div>
         </div>
-        <div id="treinoList" class="exercise-list"></div>
-        <div class="add-exercise">
-            <input type="text" id="newTreinoName" placeholder="Ex: Supino" value="Supino">
-            <button id="addTreinoBtn" class="btn-success">+ ADICIONAR</button>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h2>🧘 DESAQUECIMENTO</h2>
+        <div class="card">
+            <div class="card-header">
+                <h2>💾 SALVAR / CARREGAR</h2>
+            </div>
+            <div class="save-load">
+                <input type="text" id="treinoNome" placeholder="Nome do treino" value="Meu Treino">
+                <button id="saveTreinoBtn" class="btn-primary">💾 SALVAR</button>
+                <select id="loadSelect">
+                    <option value="">-- Carregar --</option>
+                </select>
+                <button id="deleteTreinoBtn" class="btn-danger">🗑️ EXCLUIR</button>
+            </div>
+            <footer>🔊 Toque na tela para ativar o áudio | Durante o treino, a tela fica travada</footer>
         </div>
-        <div id="desaquecimentoList" class="exercise-list"></div>
-        <div class="add-exercise">
-            <input type="text" id="newDesaquecimentoName" placeholder="Ex: Alongamento" value="Alongamento">
-            <button id="addDesaquecimentoBtn" class="btn-success">+ ADICIONAR</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h2>💾 SALVAR / CARREGAR</h2>
-        </div>
-        <div class="save-load">
-            <input type="text" id="treinoNome" placeholder="Nome do treino" value="Meu Treino">
-            <button id="saveTreinoBtn" class="btn-primary">💾 SALVAR</button>
-            <select id="loadSelect">
-                <option value="">-- Carregar --</option>
-            </select>
-            <button id="deleteTreinoBtn" class="btn-danger">🗑️ EXCLUIR</button>
-        </div>
-        <footer>🔊 Toque na tela para ativar o áudio | Use as setas ▲▼ para mover os exercícios</footer>
     </div>
 </div>
 
@@ -503,6 +546,8 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const resetBtn = document.getElementById('resetBtn');
     const statusMsg = document.getElementById('statusMessage');
+    const lockIndicator = document.getElementById('lockIndicator');
+    const editableCards = document.getElementById('editableCards');
     
     const aquecimentoListDiv = document.getElementById('aquecimentoList');
     const treinoListDiv = document.getElementById('treinoList');
@@ -525,6 +570,19 @@
     const treinoNomeInput = document.getElementById('treinoNome');
     const loadSelect = document.getElementById('loadSelect');
     const deleteTreinoBtn = document.getElementById('deleteTreinoBtn');
+    
+    // ========== FUNÇÃO PARA TRAVAR/DESTRAVAR TELA ==========
+    function setLockedMode(locked) {
+        if (locked) {
+            editableCards.classList.add('locked');
+            lockIndicator.classList.add('active');
+            statusMsg.innerHTML = '<span class="voice-badge">🔒 MODO TREINO</span> Tela travada - Pause para editar';
+        } else {
+            editableCards.classList.remove('locked');
+            lockIndicator.classList.remove('active');
+            statusMsg.innerHTML = '<span class="voice-badge">🔊 VOZ</span> Toque na tela para ativar o áudio';
+        }
+    }
     
     // ========== FUNÇÕES ==========
     function formatTimeToText(seconds) {
@@ -796,6 +854,8 @@
         updateTimerUI();
         
         isRunning = true;
+        setLockedMode(true); // TRAVA A TELA
+        
         timerInterval = setInterval(() => {
             if (!isRunning) return;
             
@@ -849,6 +909,7 @@
                     speak("Treino finalizado!");
                     statusMsg.innerHTML = "🏆 TREINO FINALIZADO!";
                     beep(1047, 0.5, 0.2);
+                    setLockedMode(false); // DESTRAVA A TELA
                 }
                 renderAllLists();
             }
@@ -896,6 +957,7 @@
         stopTimer();
         isRunning = false;
         announcedNext = false;
+        setLockedMode(false); // DESTRAVA A TELA
         rebuildWorkflow();
         if (fullWorkflow.length > 0) {
             currentStepIndex = 0;
@@ -1027,6 +1089,8 @@
     }
     
     function applyConfig() {
+        if (isRunning) return;
+        
         treinoRounds = Math.max(1, parseInt(treinoRoundsInput.value) || 1);
         restBetweenRounds = Math.max(0, parseInt(restBetweenRoundsInput.value) || 0);
         restAquecimentoToTreino = Math.max(0, parseInt(restAquecimentoToTreinoInput.value) || 0);
@@ -1043,6 +1107,8 @@
     }
     
     function addExercicio(lista, nomeInput) {
+        if (isRunning) return;
+        
         let name = nomeInput.value.trim();
         if (!name) name = "Exercício";
         lista.push({ name: name, seconds: 45 });
@@ -1052,6 +1118,8 @@
     }
     
     function salvarTreino() {
+        if (isRunning) return;
+        
         const nome = treinoNomeInput.value.trim();
         if (!nome) { alert("Digite um nome"); return; }
         const data = {
@@ -1066,6 +1134,8 @@
     }
     
     function carregarTreino(nome) {
+        if (isRunning) return;
+        
         const salvos = JSON.parse(localStorage.getItem('treinoApp') || '{}');
         const data = salvos[nome];
         if (data) {
@@ -1085,6 +1155,7 @@
             stopTimer();
             isRunning = false;
             announcedNext = false;
+            setLockedMode(false);
             rebuildWorkflow();
             if (fullWorkflow.length > 0) {
                 currentStepIndex = 0;
@@ -1101,6 +1172,8 @@
     }
     
     function deletarTreino() {
+        if (isRunning) return;
+        
         const nome = loadSelect.value;
         if (!nome) { alert("Selecione um treino"); return; }
         if (confirm(`Excluir "${nome}"?`)) {
@@ -1127,6 +1200,8 @@
     pauseBtn.onclick = () => {
         if (isRunning) {
             stopTimer();
+            isRunning = false;
+            setLockedMode(false); // DESTRAVA A TELA AO PAUSAR
             statusMsg.innerHTML = "⏸ Pausado. Clique INICIAR.";
             window.speechSynthesis.cancel();
         }
@@ -1173,26 +1248,10 @@
         totalTimeLeft = totalTimeSeconds;
         updateTotalTimerUI();
         updateTimerUI();
-        statusMsg.innerHTML = "✅ App pronto! Toque na tela para ativar o áudio. Use as setas ▲▼ para mover os exercícios!";
+        statusMsg.innerHTML = "✅ App pronto! Toque na tela para ativar o áudio. Durante o treino, a tela trava automaticamente!";
     }
     init();
     atualizarSelect();
-    
-    // ============================================
-    // REGISTRO DO SERVICE WORKER - CORRIGIDO
-    // ============================================
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            // Caminho absoluto para o GitHub Pages
-            navigator.serviceWorker.register('/app_treino/sw.js')
-                .then(function(registration) {
-                    console.log('Service Worker registrado com sucesso no escopo:', registration.scope);
-                })
-                .catch(function(error) {
-                    console.log('Falha no registro do Service Worker:', error);
-                });
-        });
-    }
 </script>
 </body>
 </html>
