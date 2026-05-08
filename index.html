@@ -12,7 +12,7 @@
         * {
             box-sizing: border-box;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            user-select: none; /* Evita selecionar texto */
+            user-select: none;
         }
         body {
             background: #0a0f1e;
@@ -34,8 +34,8 @@
             transition: opacity 0.3s;
         }
         .card.locked {
-            opacity: 0.6;
-            pointer-events: none; /* Bloqueia interação */
+            opacity: 0.5;
+            pointer-events: none !important;
         }
         .card-header {
             display: flex;
@@ -388,7 +388,6 @@
             .move-buttons { justify-content: center; }
         }
         
-        /* Indicador de bloqueio */
         .lock-indicator {
             position: fixed;
             bottom: 20px;
@@ -396,23 +395,56 @@
             transform: translateX(-50%);
             background: #dc2626;
             color: white;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 40px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: bold;
             z-index: 1000;
             display: none;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
         }
         .lock-indicator.active {
             display: block;
+        }
+        
+        .confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #141b2b;
+            border-radius: 1.5rem;
+            padding: 24px;
+            z-index: 2000;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 2px solid #3b82f6;
+            min-width: 250px;
+        }
+        .confirm-dialog p {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .confirm-dialog button {
+            margin: 0 8px;
+            padding: 8px 20px;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1999;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- Indicador de modo bloqueado -->
-    <div id="lockIndicator" class="lock-indicator">🔒 Modo treino ativo - tela travada</div>
+    <div id="lockIndicator" class="lock-indicator">🔒 TREINO EM ANDAMENTO - EDITAÇÃO BLOQUEADA</div>
     
     <div class="card">
         <div class="timer-panel">
@@ -507,7 +539,7 @@
                 </select>
                 <button id="deleteTreinoBtn" class="btn-danger">🗑️ EXCLUIR</button>
             </div>
-            <footer>🔊 Toque na tela para ativar o áudio | Durante o treino, a tela fica travada</footer>
+            <footer>🔊 Toque na tela para ativar o áudio | Durante o treino, APENAS PAUSAR funciona</footer>
         </div>
     </div>
 </div>
@@ -549,34 +581,40 @@
     const lockIndicator = document.getElementById('lockIndicator');
     const editableCards = document.getElementById('editableCards');
     
-    const aquecimentoListDiv = document.getElementById('aquecimentoList');
-    const treinoListDiv = document.getElementById('treinoList');
-    const desaquecimentoListDiv = document.getElementById('desaquecimentoList');
-    
-    const treinoRoundsInput = document.getElementById('treinoRoundsInput');
-    const restBetweenRoundsInput = document.getElementById('restBetweenRoundsInput');
-    const restAquecimentoToTreinoInput = document.getElementById('restAquecimentoToTreinoInput');
-    const restTreinoToDesaquecimentoInput = document.getElementById('restTreinoToDesaquecimentoInput');
-    const applyConfigBtn = document.getElementById('applyConfigBtn');
-    
-    const addAquecimentoBtn = document.getElementById('addAquecimentoBtn');
-    const newAquecimentoName = document.getElementById('newAquecimentoName');
-    const addTreinoBtn = document.getElementById('addTreinoBtn');
-    const newTreinoName = document.getElementById('newTreinoName');
-    const addDesaquecimentoBtn = document.getElementById('addDesaquecimentoBtn');
-    const newDesaquecimentoName = document.getElementById('newDesaquecimentoName');
-    
-    const saveTreinoBtn = document.getElementById('saveTreinoBtn');
-    const treinoNomeInput = document.getElementById('treinoNome');
-    const loadSelect = document.getElementById('loadSelect');
-    const deleteTreinoBtn = document.getElementById('deleteTreinoBtn');
+    // ========== FUNÇÃO DE CONFIRMAÇÃO ==========
+    function showConfirm(message, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        dialog.innerHTML = `
+            <p>${message}</p>
+            <button id="confirmYes" class="btn-primary">SIM</button>
+            <button id="confirmNo" class="btn-danger">NÃO</button>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+        document.getElementById('confirmYes').onclick = () => {
+            overlay.remove();
+            dialog.remove();
+            onConfirm();
+        };
+        
+        document.getElementById('confirmNo').onclick = () => {
+            overlay.remove();
+            dialog.remove();
+        };
+    }
     
     // ========== FUNÇÃO PARA TRAVAR/DESTRAVAR TELA ==========
     function setLockedMode(locked) {
         if (locked) {
             editableCards.classList.add('locked');
             lockIndicator.classList.add('active');
-            statusMsg.innerHTML = '<span class="voice-badge">🔒 MODO TREINO</span> Tela travada - Pause para editar';
+            statusMsg.innerHTML = '<span class="voice-badge">🔒 MODO TREINO</span> Apenas PAUSAR funciona';
         } else {
             editableCards.classList.remove('locked');
             lockIndicator.classList.remove('active');
@@ -597,7 +635,7 @@
         return `${mins} minuto${mins > 1 ? 's' : ''} e ${secs} segundo${secs > 1 ? 's' : ''}`;
     }
     
-    // Ativar áudio no primeiro toque
+    // Ativar áudio
     let audioActivated = false;
     function speak(text) {
         if (!text || !audioActivated) return;
@@ -634,7 +672,7 @@
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioCtx.resume();
             audioActivated = true;
-            statusMsg.innerHTML = '<span class="voice-badge">🔊 VOZ ATIVA</span> Áudio ativado! Toque em INICIAR.';
+            statusMsg.innerHTML = '<span class="voice-badge">🔊 VOZ ATIVA</span> Áudio ativado!';
         }
     }
     document.body.addEventListener('touchstart', activateAudio, { once: true });
@@ -854,7 +892,7 @@
         updateTimerUI();
         
         isRunning = true;
-        setLockedMode(true); // TRAVA A TELA
+        setLockedMode(true);
         
         timerInterval = setInterval(() => {
             if (!isRunning) return;
@@ -909,7 +947,7 @@
                     speak("Treino finalizado!");
                     statusMsg.innerHTML = "🏆 TREINO FINALIZADO!";
                     beep(1047, 0.5, 0.2);
-                    setLockedMode(false); // DESTRAVA A TELA
+                    setLockedMode(false);
                 }
                 renderAllLists();
             }
@@ -954,26 +992,49 @@
     }
     
     function resetTreino() {
-        stopTimer();
-        isRunning = false;
-        announcedNext = false;
-        setLockedMode(false); // DESTRAVA A TELA
-        rebuildWorkflow();
-        if (fullWorkflow.length > 0) {
-            currentStepIndex = 0;
-            timeLeft = fullWorkflow[0].seconds;
+        if (isRunning) {
+            showConfirm("Tem certeza que deseja RESETAR o treino?", () => {
+                stopTimer();
+                isRunning = false;
+                announcedNext = false;
+                setLockedMode(false);
+                rebuildWorkflow();
+                if (fullWorkflow.length > 0) {
+                    currentStepIndex = 0;
+                    timeLeft = fullWorkflow[0].seconds;
+                } else {
+                    currentStepIndex = 0;
+                    timeLeft = 0;
+                }
+                totalTimeLeft = totalTimeSeconds;
+                updateTotalTimerUI();
+                updateTimerUI();
+                renderAllLists();
+                statusMsg.innerHTML = "🔄 Resetado. Clique INICIAR.";
+                speak("Treino resetado");
+            });
         } else {
-            currentStepIndex = 0;
-            timeLeft = 0;
+            stopTimer();
+            isRunning = false;
+            announcedNext = false;
+            setLockedMode(false);
+            rebuildWorkflow();
+            if (fullWorkflow.length > 0) {
+                currentStepIndex = 0;
+                timeLeft = fullWorkflow[0].seconds;
+            } else {
+                currentStepIndex = 0;
+                timeLeft = 0;
+            }
+            totalTimeLeft = totalTimeSeconds;
+            updateTotalTimerUI();
+            updateTimerUI();
+            renderAllLists();
+            statusMsg.innerHTML = "🔄 Resetado. Clique INICIAR.";
         }
-        totalTimeLeft = totalTimeSeconds;
-        updateTotalTimerUI();
-        updateTimerUI();
-        renderAllLists();
-        statusMsg.innerHTML = "🔄 Resetado. Clique INICIAR.";
     }
     
-    // ========== RENDERIZAR LISTAS COM BOTÕES DE MOVER ==========
+    // ========== RENDERIZAR LISTAS ==========
     function renderExerciseList(container, exercises, listType) {
         if (!container) return;
         container.innerHTML = '';
@@ -1006,8 +1067,10 @@
             nameInput.type = 'text';
             nameInput.value = ex.name;
             nameInput.addEventListener('change', (e) => {
-                exercises[idx].name = e.target.value;
-                rebuildWorkflow();
+                if (!isRunning) {
+                    exercises[idx].name = e.target.value;
+                    rebuildWorkflow();
+                }
             });
             
             const timeDiv = document.createElement('div');
@@ -1016,9 +1079,11 @@
             minusBtn.textContent = '-5';
             minusBtn.className = 'time-btn';
             minusBtn.addEventListener('click', () => {
-                exercises[idx].seconds = Math.max(5, exercises[idx].seconds - 5);
-                rebuildWorkflow();
-                renderAllLists();
+                if (!isRunning) {
+                    exercises[idx].seconds = Math.max(5, exercises[idx].seconds - 5);
+                    rebuildWorkflow();
+                    renderAllLists();
+                }
             });
             const timeSpan = document.createElement('span');
             timeSpan.textContent = `${exercises[idx].seconds}s`;
@@ -1026,15 +1091,16 @@
             plusBtn.textContent = '+5';
             plusBtn.className = 'time-btn';
             plusBtn.addEventListener('click', () => {
-                exercises[idx].seconds += 5;
-                rebuildWorkflow();
-                renderAllLists();
+                if (!isRunning) {
+                    exercises[idx].seconds += 5;
+                    rebuildWorkflow();
+                    renderAllLists();
+                }
             });
             timeDiv.appendChild(minusBtn);
             timeDiv.appendChild(timeSpan);
             timeDiv.appendChild(plusBtn);
             
-            // Botões de mover
             const moveDiv = document.createElement('div');
             moveDiv.className = 'move-buttons';
             
@@ -1043,7 +1109,7 @@
             upBtn.className = 'move-btn';
             upBtn.disabled = idx === 0;
             upBtn.addEventListener('click', () => {
-                if (idx > 0) {
+                if (!isRunning && idx > 0) {
                     [exercises[idx-1], exercises[idx]] = [exercises[idx], exercises[idx-1]];
                     rebuildWorkflow();
                     renderAllLists();
@@ -1055,7 +1121,7 @@
             downBtn.className = 'move-btn';
             downBtn.disabled = idx === exercises.length - 1;
             downBtn.addEventListener('click', () => {
-                if (idx < exercises.length - 1) {
+                if (!isRunning && idx < exercises.length - 1) {
                     [exercises[idx+1], exercises[idx]] = [exercises[idx], exercises[idx+1]];
                     rebuildWorkflow();
                     renderAllLists();
@@ -1069,9 +1135,11 @@
             delBtn.textContent = '🗑️';
             delBtn.className = 'delete-btn';
             delBtn.addEventListener('click', () => {
-                exercises.splice(idx, 1);
-                rebuildWorkflow();
-                renderAllLists();
+                if (!isRunning) {
+                    exercises.splice(idx, 1);
+                    rebuildWorkflow();
+                    renderAllLists();
+                }
             });
             
             div.appendChild(nameInput);
@@ -1196,16 +1264,22 @@
         }
     }
     
+    // ========== EVENTOS ==========
     startBtn.onclick = startTreino;
+    
     pauseBtn.onclick = () => {
         if (isRunning) {
-            stopTimer();
-            isRunning = false;
-            setLockedMode(false); // DESTRAVA A TELA AO PAUSAR
-            statusMsg.innerHTML = "⏸ Pausado. Clique INICIAR.";
-            window.speechSynthesis.cancel();
+            showConfirm("Pausar o treino?", () => {
+                stopTimer();
+                isRunning = false;
+                setLockedMode(false);
+                statusMsg.innerHTML = "⏸ Pausado. Clique INICIAR para continuar.";
+                window.speechSynthesis.cancel();
+                speak("Treino pausado");
+            });
         }
     };
+    
     resetBtn.onclick = resetTreino;
     applyConfigBtn.onclick = applyConfig;
     
@@ -1248,7 +1322,7 @@
         totalTimeLeft = totalTimeSeconds;
         updateTotalTimerUI();
         updateTimerUI();
-        statusMsg.innerHTML = "✅ App pronto! Toque na tela para ativar o áudio. Durante o treino, a tela trava automaticamente!";
+        statusMsg.innerHTML = "✅ App pronto! Toque na tela para ativar o áudio. Durante o treino, apenas PAUSAR funciona!";
     }
     init();
     atualizarSelect();
