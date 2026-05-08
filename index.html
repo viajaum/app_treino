@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Treino Profissional - Completo</title>
+<title>Treino Profissional - Carregar JSON</title>
 
 <style>
 
@@ -119,61 +119,6 @@ button{
 .btn-success{ background:#10b981; }
 .btn-warning{ background:#f59e0b; }
 
-.exercise-list{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-}
-
-.exercise-item{
-    background:#1e293b;
-    border-radius:16px;
-    padding:12px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-.exercise-item.current{
-    border:2px solid #facc15;
-}
-
-.exercise-item input{
-    flex:1;
-    min-width:120px;
-    background:#0f172a;
-    border:none;
-    border-radius:12px;
-    padding:10px;
-    color:white;
-}
-
-.time-box{
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-
-.time-box span{
-    min-width:55px;
-    text-align:center;
-    font-weight:bold;
-    color:#facc15;
-}
-
-.small-btn{
-    padding:6px 10px;
-    border-radius:10px;
-    background:#334155;
-    cursor:pointer;
-}
-
-.move-buttons{
-    display:flex;
-    gap:5px;
-}
-
 .lock-indicator{
     display:none;
     text-align:center;
@@ -215,51 +160,27 @@ button{
     font-size:24px;
 }
 
-/* trava só edição */
-.locked .exercise-item input,
-.locked .small-btn,
-.locked .move-btn,
-.locked .add-exercise input,
-.locked .add-exercise button{
-    pointer-events:none;
-    opacity:.5;
-}
-
-.config-bar{
-    display:flex;
-    gap:15px;
-    align-items:center;
-    flex-wrap:wrap;
+.import-json{
     background:#0f172a;
-    padding:15px;
     border-radius:16px;
+    padding:15px;
     margin-bottom:15px;
-}
-
-.config-item{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:14px;
-}
-
-.config-item input{
-    background:#1e293b;
-    border:none;
-    padding:6px 10px;
-    border-radius:40px;
-    color:white;
-    width:70px;
     text-align:center;
 }
 
-.etapa-title{
-    font-size:18px;
+.file-input-label{
+    background:#3b82f6;
+    padding:12px 24px;
+    border-radius:40px;
+    cursor:pointer;
+    display:inline-block;
     font-weight:bold;
-    margin-bottom:15px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+}
+
+.file-info{
+    margin-top:10px;
+    font-size:12px;
+    color:#94a3b8;
 }
 
 </style>
@@ -270,7 +191,7 @@ button{
 <div class="container">
 
 <div class="lock-indicator" id="lockIndicator">
-🔒 TREINO EM ANDAMENTO - EDIÇÃO BLOQUEADA
+🔒 TREINO EM ANDAMENTO
 </div>
 
 <div class="card">
@@ -280,11 +201,10 @@ button{
 </div>
 
 <div class="exercise-name" id="exerciseName">
-Carregando...
+Carregue um treino
 </div>
 
 <div class="stage-category" id="stageCategory">
-🔥 AQUECIMENTO
 </div>
 
 <div class="round-info" id="roundInfo">
@@ -308,85 +228,18 @@ Carregando...
 </div>
 
 <div class="status" id="statusMessage">
-✏️ Edição liberada - monte seu treino
+📁 Selecione um arquivo JSON para começar
 </div>
 
 </div>
 
-<div id="editableCards">
-
-<div class="card">
-<div class="etapa-title">
-<span>⚙️ CONFIGURAÇÕES</span>
+<div class="import-json">
+<div style="font-size:18px; font-weight:bold; margin-bottom:15px;">📁 CARREGAR TREINO</div>
+<input type="file" id="jsonFileInput" accept=".json" style="display:none;">
+<button id="importJsonBtn" class="btn-primary" style="font-size:18px; padding:15px 30px;">📂 SELECIONAR ARQUIVO JSON</button>
+<div class="file-info">
+Exemplo de arquivo: treino.json com { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }
 </div>
-<div class="config-bar">
-<div class="config-item">
-<label>🔄 Rodadas TREINO:</label>
-<input type="number" id="treinoRoundsInput" min="1" max="99" value="3">
-</div>
-<div class="config-item">
-<label>⏱️ Descanso entre rodadas (seg):</label>
-<input type="number" id="restBetweenRoundsInput" min="0" max="600" value="60">
-</div>
-<div class="config-item">
-<label>⏸️ Transição AQUECIMENTO→TREINO:</label>
-<input type="number" id="restAquecimentoToTreinoInput" min="0" max="300" value="10">
-</div>
-<div class="config-item">
-<label>⏸️ Transição TREINO→DESAQUECIMENTO:</label>
-<input type="number" id="restTreinoToDesaquecimentoInput" min="0" max="300" value="10">
-</div>
-<button id="applyConfigBtn" class="btn-primary">APLICAR</button>
-</div>
-</div>
-
-<div class="card">
-<div class="etapa-title">
-<span>🔥 AQUECIMENTO (executa 1 vez)</span>
-</div>
-<div class="exercise-list" id="aquecimentoList"></div>
-<div class="controls add-exercise">
-<input type="text" id="newAquecimentoName" placeholder="Novo exercício" value="Polichinelo">
-<button class="btn-success" id="addAquecimentoBtn">+ ADICIONAR</button>
-</div>
-</div>
-
-<div class="card">
-<div class="etapa-title">
-<span>💪 TREINO (repetições)</span>
-</div>
-<div class="exercise-list" id="treinoList"></div>
-<div class="controls add-exercise">
-<input type="text" id="newTreinoName" placeholder="Novo exercício" value="Supino">
-<button class="btn-success" id="addTreinoBtn">+ ADICIONAR</button>
-</div>
-</div>
-
-<div class="card">
-<div class="etapa-title">
-<span>🧘 DESAQUECIMENTO (executa 1 vez)</span>
-</div>
-<div class="exercise-list" id="desaquecimentoList"></div>
-<div class="controls add-exercise">
-<input type="text" id="newDesaquecimentoName" placeholder="Novo exercício" value="Alongamento">
-<button class="btn-success" id="addDesaquecimentoBtn">+ ADICIONAR</button>
-</div>
-</div>
-
-<div class="card">
-<div class="etapa-title">
-<span>💾 SALVAR / CARREGAR</span>
-</div>
-<div class="controls save-load" style="justify-content:space-between; flex-wrap:wrap;">
-<input type="text" id="treinoNome" placeholder="Nome do treino" style="flex:2; background:#0f172a; border:none; border-radius:40px; padding:12px; color:white;" value="Meu Treino">
-<button id="saveTreinoBtn" class="btn-primary">💾 SALVAR</button>
-<select id="loadSelect" style="flex:1; background:#0f172a; border:none; border-radius:40px; padding:12px; color:white;">
-<option value="">-- Carregar --</option>
-</select>
-<button id="deleteTreinoBtn" class="btn-danger">🗑 EXCLUIR</button>
-</div>
-</div>
-
 </div>
 
 </div>
@@ -401,10 +254,10 @@ let aquecimento = [];
 let treino = [];
 let desaquecimento = [];
 
-let treinoRounds = 3;
-let restBetweenRounds = 60;
-let restAquecimentoToTreino = 10;
-let restTreinoToDesaquecimento = 10;
+let treinoRounds = 1;
+let restBetweenRounds = 0;
+let restAquecimentoToTreino = 5;
+let restTreinoToDesaquecimento = 5;
 
 let fullWorkflow = [];
 let currentStepIndex = 0;
@@ -414,6 +267,7 @@ let isRunning = false;
 let totalTimeSeconds = 0;
 let totalTimeLeft = 0;
 let hasAnnouncedNext = false;
+let treinoCarregado = false;
 
 // ======================================
 // DOM
@@ -426,21 +280,8 @@ const stageCategory = document.getElementById('stageCategory');
 const roundInfo = document.getElementById('roundInfo');
 const nextExerciseSpan = document.getElementById('nextExercise');
 const progressFill = document.getElementById('progressFill');
-const editableCards = document.getElementById('editableCards');
 const statusMessage = document.getElementById('statusMessage');
 const lockIndicator = document.getElementById('lockIndicator');
-
-const aquecimentoList = document.getElementById('aquecimentoList');
-const treinoList = document.getElementById('treinoList');
-const desaquecimentoList = document.getElementById('desaquecimentoList');
-
-const treinoRoundsInput = document.getElementById('treinoRoundsInput');
-const restBetweenRoundsInput = document.getElementById('restBetweenRoundsInput');
-const restAquecimentoToTreinoInput = document.getElementById('restAquecimentoToTreinoInput');
-const restTreinoToDesaquecimentoInput = document.getElementById('restTreinoToDesaquecimentoInput');
-
-const treinoNomeInput = document.getElementById('treinoNome');
-const loadSelect = document.getElementById('loadSelect');
 
 // ======================================
 // ÁUDIO
@@ -453,7 +294,7 @@ function activateAudio(){
     audioActivated = true;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     ctx.resume();
-    statusMessage.innerHTML = '🔊 áudio ativado - edição liberada';
+    statusMessage.innerHTML = '🔊 áudio ativado';
 }
 document.body.addEventListener('click', activateAudio, { once: true });
 
@@ -512,16 +353,13 @@ function stopTimer(){
 
 function setLockedMode(locked){
     if(locked && isRunning){
-        editableCards.classList.add('locked');
         lockIndicator.classList.add('active');
     }else{
-        editableCards.classList.remove('locked');
         lockIndicator.classList.remove('active');
     }
 }
 
 function updateUINextExercise(){
-    // Mostra próximo exercício visualmente
     if(currentStepIndex + 1 < fullWorkflow.length){
         const nextStep = fullWorkflow[currentStepIndex + 1];
         const timeText = formatTimeToText(nextStep.seconds);
@@ -539,8 +377,8 @@ function updateUINextExercise(){
 function updateUI(){
     if(!fullWorkflow.length || currentStepIndex >= fullWorkflow.length){
         timerDisplay.textContent = formatTime(0);
-        exerciseName.textContent = "🏆 FIM!";
-        stageCategory.textContent = "PARABÉNS!";
+        exerciseName.textContent = treinoCarregado ? "🏆 FIM!" : "Carregue um treino";
+        stageCategory.textContent = "";
         roundInfo.textContent = "";
         nextExerciseSpan.textContent = "";
         progressFill.style.width = "0%";
@@ -568,15 +406,9 @@ function updateUI(){
         stageCategory.textContent = '⏸️ DESCANSO';
         roundInfo.textContent = '';
     }
-    renderAllLists();
 }
 
-// ======================================
-// AVISO DO PRÓXIMO - FRASE SIMPLES
-// ======================================
-
 function announceNextIfNeeded(){
-    // Avisa apenas quando faltam 10 segundos e ainda não avisou
     if(timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext){
         hasAnnouncedNext = true;
         const nextStep = fullWorkflow[currentStepIndex + 1];
@@ -593,10 +425,6 @@ function announceNextIfNeeded(){
         }
     }
 }
-
-// ======================================
-// CONTAGEM APENAS COM BIP
-// ======================================
 
 function showCountdown(callback){
     const overlay = document.createElement('div');
@@ -739,7 +567,6 @@ function startActualTimer(){
             totalTimeLeft--;
             updateUI();
             
-            // Avisa próximo com 10 segundos de antecedência
             if(timeLeft === 10){
                 announceNextIfNeeded();
             }
@@ -764,25 +591,21 @@ function startActualTimer(){
                 beep(1200, 0.5);
                 setLockedMode(false);
             }
-            renderAllLists();
         }
     }, 1000);
 }
 
 function startFirstExercise(){
     if(currentStepIndex >= fullWorkflow.length) return;
-    
-    // Mostra o primeiro exercício visualmente
     updateUI();
-    
     showCountdown(() => {
         startActualTimer();
     });
 }
 
 function startTreino(){
-    if(!aquecimento.length && !treino.length && !desaquecimento.length){
-        statusMessage.innerHTML = "❌ Adicione exercícios!";
+    if(!treinoCarregado){
+        statusMessage.innerHTML = "❌ Carregue um arquivo JSON primeiro!";
         return;
     }
     if(currentStepIndex >= fullWorkflow.length) resetTreino();
@@ -796,283 +619,89 @@ function pauseTreino(){
     stopTimer();
     setLockedMode(false);
     window.speechSynthesis.cancel();
-    statusMessage.innerHTML = "⏸ Pausado - edição liberada";
+    statusMessage.innerHTML = "⏸ Pausado";
 }
 
 function resetTreino(){
+    if(!treinoCarregado) return;
     if(isRunning){
-        if(confirm("Resetar o treino?")){
-            stopTimer();
-            isRunning = false;
-            setLockedMode(false);
+        stopTimer();
+        isRunning = false;
+        setLockedMode(false);
+        currentStepIndex = 0;
+        hasAnnouncedNext = false;
+        if(fullWorkflow.length > 0){
+            timeLeft = fullWorkflow[0].seconds;
+        }
+        totalTimeLeft = totalTimeSeconds;
+        updateUI();
+        statusMessage.innerHTML = "🔄 Resetado";
+        speak("Treino resetado");
+    }else{
+        stopTimer();
+        isRunning = false;
+        setLockedMode(false);
+        currentStepIndex = 0;
+        hasAnnouncedNext = false;
+        if(fullWorkflow.length > 0){
+            timeLeft = fullWorkflow[0].seconds;
+        }
+        totalTimeLeft = totalTimeSeconds;
+        updateUI();
+        statusMessage.innerHTML = "🔄 Resetado";
+    }
+}
+
+// ======================================
+// IMPORTAÇÃO JSON
+// ======================================
+
+function importFromJSON(jsonData){
+    try {
+        const data = JSON.parse(jsonData);
+        
+        aquecimento = [];
+        treino = [];
+        desaquecimento = [];
+        
+        if(data.aquecimento) aquecimento = data.aquecimento.map(ex => ({
+            name: ex.nome || ex.name,
+            seconds: ex.segundos || ex.seconds
+        }));
+        
+        if(data.treino) treino = data.treino.map(ex => ({
+            name: ex.nome || ex.name,
+            seconds: ex.segundos || ex.seconds
+        }));
+        
+        if(data.desaquecimento) desaquecimento = data.desaquecimento.map(ex => ({
+            name: ex.nome || ex.name,
+            seconds: ex.segundos || ex.seconds
+        }));
+        
+        if(data.config){
+            if(data.config.rodadas) treinoRounds = data.config.rodadas;
+            if(data.config.descanso_entre_rodadas) restBetweenRounds = data.config.descanso_entre_rodadas;
+            if(data.config.transicao_aquecimento_treino) restAquecimentoToTreino = data.config.transicao_aquecimento_treino;
+            if(data.config.transicao_treino_desaquecimento) restTreinoToDesaquecimento = data.config.transicao_treino_desaquecimento;
+        }
+        
+        treinoCarregado = true;
+        rebuildWorkflow();
+        
+        if(fullWorkflow.length > 0){
             currentStepIndex = 0;
-            hasAnnouncedNext = false;
-            rebuildWorkflow();
-            if(fullWorkflow.length > 0){
-                timeLeft = fullWorkflow[0].seconds;
-            }
-            totalTimeLeft = totalTimeSeconds;
-            updateUI();
-            statusMessage.innerHTML = "🔄 Resetado - edição liberada";
-            speak("Treino resetado");
-        }
-    }else{
-        stopTimer();
-        isRunning = false;
-        setLockedMode(false);
-        currentStepIndex = 0;
-        hasAnnouncedNext = false;
-        rebuildWorkflow();
-        if(fullWorkflow.length > 0){
             timeLeft = fullWorkflow[0].seconds;
         }
         totalTimeLeft = totalTimeSeconds;
         updateUI();
-        statusMessage.innerHTML = "🔄 Resetado - edição liberada";
-    }
-}
-
-function applyConfig(){
-    const newRounds = parseInt(treinoRoundsInput.value);
-    if(newRounds >= 1 && newRounds <= 99) treinoRounds = newRounds;
-    restBetweenRounds = Math.max(0, parseInt(restBetweenRoundsInput.value) || 0);
-    restAquecimentoToTreino = Math.max(0, parseInt(restAquecimentoToTreinoInput.value) || 0);
-    restTreinoToDesaquecimento = Math.max(0, parseInt(restTreinoToDesaquecimentoInput.value) || 0);
-    
-    rebuildWorkflow();
-    if(!isRunning && fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length){
-        timeLeft = fullWorkflow[currentStepIndex].seconds;
-        updateUI();
-    }
-    totalTimeLeft = totalTimeSeconds;
-    updateUI();
-    statusMessage.innerHTML = `⚙️ Config aplicada: ${treinoRounds}x treino`;
-}
-
-// ======================================
-// RENDERIZAR LISTAS
-// ======================================
-
-function renderExerciseList(container, exercises, listType){
-    if(!container) return;
-    container.innerHTML = '';
-    if(exercises.length === 0){
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">➕ Clique em ADICIONAR</div>';
-        return;
-    }
-    
-    exercises.forEach((ex, idx) => {
-        const div = document.createElement('div');
-        div.className = 'exercise-item';
         
-        let isCurrent = false;
-        for(let i=0; i<fullWorkflow.length; i++){
-            const step = fullWorkflow[i];
-            if(step.etapa === listType && step.idx === idx){
-                if(i === currentStepIndex) isCurrent = true;
-                break;
-            }
-        }
-        if(isCurrent) div.classList.add('current');
+        let nomeTreino = data.nome || "Treino";
+        statusMessage.innerHTML = `✅ "${nomeTreino}" carregado! ${fullWorkflow.length} blocos. Clique INICIAR.`;
+        speak(`${nomeTreino} carregado`);
         
-        const input = document.createElement('input');
-        input.value = ex.name;
-        input.onchange = (e) => {
-            exercises[idx].name = e.target.value;
-            rebuildWorkflow();
-        };
-        
-        const timeBox = document.createElement('div');
-        timeBox.className = 'time-box';
-        
-        const minus = document.createElement('button');
-        minus.className = 'small-btn';
-        minus.textContent = '-5';
-        minus.onclick = () => {
-            exercises[idx].seconds = Math.max(5, exercises[idx].seconds - 5);
-            if(!isRunning && fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length){
-                const step = fullWorkflow[currentStepIndex];
-                if(step.etapa === listType && step.idx === idx){
-                    timeLeft = exercises[idx].seconds;
-                }
-            }
-            rebuildWorkflow();
-        };
-        
-        const span = document.createElement('span');
-        span.textContent = `${ex.seconds}s`;
-        
-        const plus = document.createElement('button');
-        plus.className = 'small-btn';
-        plus.textContent = '+5';
-        plus.onclick = () => {
-            exercises[idx].seconds += 5;
-            if(!isRunning && fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length){
-                const step = fullWorkflow[currentStepIndex];
-                if(step.etapa === listType && step.idx === idx){
-                    timeLeft = exercises[idx].seconds;
-                }
-            }
-            rebuildWorkflow();
-        };
-        
-        timeBox.appendChild(minus);
-        timeBox.appendChild(span);
-        timeBox.appendChild(plus);
-        
-        const moveDiv = document.createElement('div');
-        moveDiv.className = 'move-buttons';
-        
-        const up = document.createElement('button');
-        up.className = 'small-btn move-btn';
-        up.textContent = '▲';
-        up.disabled = idx === 0;
-        up.onclick = () => {
-            [exercises[idx-1], exercises[idx]] = [exercises[idx], exercises[idx-1]];
-            rebuildWorkflow();
-        };
-        
-        const down = document.createElement('button');
-        down.className = 'small-btn move-btn';
-        down.textContent = '▼';
-        down.disabled = idx === exercises.length - 1;
-        down.onclick = () => {
-            [exercises[idx+1], exercises[idx]] = [exercises[idx], exercises[idx+1]];
-            rebuildWorkflow();
-        };
-        
-        moveDiv.appendChild(up);
-        moveDiv.appendChild(down);
-        
-        const del = document.createElement('button');
-        del.className = 'btn-danger';
-        del.textContent = '🗑';
-        del.onclick = () => {
-            exercises.splice(idx, 1);
-            rebuildWorkflow();
-        };
-        
-        div.appendChild(input);
-        div.appendChild(timeBox);
-        div.appendChild(moveDiv);
-        div.appendChild(del);
-        container.appendChild(div);
-    });
-}
-
-function renderAllLists(){
-    renderExerciseList(aquecimentoList, aquecimento, 'aquecimento');
-    renderExerciseList(treinoList, treino, 'treino');
-    renderExerciseList(desaquecimentoList, desaquecimento, 'desaquecimento');
-}
-
-// ======================================
-// ADICIONAR EXERCÍCIOS
-// ======================================
-
-document.getElementById('addAquecimentoBtn').onclick = () => {
-    const input = document.getElementById('newAquecimentoName');
-    const name = input.value.trim();
-    if(name){
-        aquecimento.push({ name: name, seconds: 45 });
-        rebuildWorkflow();
-        input.value = '';
-    }
-};
-
-document.getElementById('addTreinoBtn').onclick = () => {
-    const input = document.getElementById('newTreinoName');
-    const name = input.value.trim();
-    if(name){
-        treino.push({ name: name, seconds: 45 });
-        rebuildWorkflow();
-        input.value = '';
-    }
-};
-
-document.getElementById('addDesaquecimentoBtn').onclick = () => {
-    const input = document.getElementById('newDesaquecimentoName');
-    const name = input.value.trim();
-    if(name){
-        desaquecimento.push({ name: name, seconds: 45 });
-        rebuildWorkflow();
-        input.value = '';
-    }
-};
-
-// ======================================
-// SALVAR / CARREGAR
-// ======================================
-
-function salvarTreino(){
-    const nome = treinoNomeInput.value.trim();
-    if(!nome){ alert("Digite um nome"); return; }
-    const data = {
-        aquecimento, treino, desaquecimento,
-        treinoRounds, restBetweenRounds,
-        restAquecimentoToTreino, restTreinoToDesaquecimento
-    };
-    const salvos = JSON.parse(localStorage.getItem('treinoProfissional') || '{}');
-    salvos[nome] = data;
-    localStorage.setItem('treinoProfissional', JSON.stringify(salvos));
-    atualizarSelect();
-    statusMessage.innerHTML = `💾 "${nome}" salvo!`;
-}
-
-function carregarTreino(nome){
-    const salvos = JSON.parse(localStorage.getItem('treinoProfissional') || '{}');
-    const data = salvos[nome];
-    if(data){
-        aquecimento = data.aquecimento || [];
-        treino = data.treino || [];
-        desaquecimento = data.desaquecimento || [];
-        treinoRounds = data.treinoRounds || 3;
-        restBetweenRounds = data.restBetweenRounds || 60;
-        restAquecimentoToTreino = data.restAquecimentoToTreino || 10;
-        restTreinoToDesaquecimento = data.restTreinoToDesaquecimento || 10;
-        
-        treinoRoundsInput.value = treinoRounds;
-        restBetweenRoundsInput.value = restBetweenRounds;
-        restAquecimentoToTreinoInput.value = restAquecimentoToTreino;
-        restTreinoToDesaquecimentoInput.value = restTreinoToDesaquecimento;
-        
-        stopTimer();
-        isRunning = false;
-        setLockedMode(false);
-        currentStepIndex = 0;
-        hasAnnouncedNext = false;
-        rebuildWorkflow();
-        if(fullWorkflow.length > 0){
-            timeLeft = fullWorkflow[0].seconds;
-        }
-        totalTimeLeft = totalTimeSeconds;
-        updateUI();
-        statusMessage.innerHTML = `📂 "${nome}" carregado!`;
-    }else{
-        alert("Treino não encontrado");
-    }
-}
-
-function deletarTreino(){
-    const nome = loadSelect.value;
-    if(!nome){ alert("Selecione um treino"); return; }
-    if(confirm(`Excluir "${nome}"?`)){
-        const salvos = JSON.parse(localStorage.getItem('treinoProfissional') || '{}');
-        delete salvos[nome];
-        localStorage.setItem('treinoProfissional', JSON.stringify(salvos));
-        atualizarSelect();
-        statusMessage.innerHTML = `🗑️ "${nome}" excluído`;
-    }
-}
-
-function atualizarSelect(){
-    const salvos = JSON.parse(localStorage.getItem('treinoProfissional') || '{}');
-    loadSelect.innerHTML = '<option value="">-- Carregar --</option>';
-    for(let nome in salvos){
-        const opt = document.createElement('option');
-        opt.value = nome;
-        opt.textContent = nome;
-        loadSelect.appendChild(opt);
+    } catch(e) {
+        alert("Erro ao importar JSON: " + e.message);
     }
 }
 
@@ -1080,44 +709,30 @@ function atualizarSelect(){
 // EVENTOS
 // ======================================
 
+document.getElementById('importJsonBtn').onclick = () => {
+    document.getElementById('jsonFileInput').click();
+};
+
+document.getElementById('jsonFileInput').onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        importFromJSON(event.target.result);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+};
+
 document.getElementById('startBtn').onclick = startTreino;
 document.getElementById('pauseBtn').onclick = pauseTreino;
 document.getElementById('resetBtn').onclick = resetTreino;
-document.getElementById('applyConfigBtn').onclick = applyConfig;
-document.getElementById('saveTreinoBtn').onclick = salvarTreino;
-document.getElementById('deleteTreinoBtn').onclick = deletarTreino;
-loadSelect.onchange = (e) => { if(e.target.value) carregarTreino(e.target.value); };
 
 // ======================================
 // INIT
 // ======================================
 
-function init(){
-    aquecimento = [
-        { name: "Polichinelo", seconds: 60 },
-        { name: "Rotação de braços", seconds: 45 }
-    ];
-    treino = [
-        { name: "Supino", seconds: 45 },
-        { name: "Agachamento", seconds: 45 },
-        { name: "Remada", seconds: 45 }
-    ];
-    desaquecimento = [
-        { name: "Alongamento", seconds: 40 }
-    ];
-    
-    rebuildWorkflow();
-    if(fullWorkflow.length > 0){
-        currentStepIndex = 0;
-        timeLeft = fullWorkflow[0].seconds;
-    }
-    totalTimeLeft = totalTimeSeconds;
-    updateUI();
-    statusMessage.innerHTML = "✅ App pronto! Edição liberada. Clique INICIAR para começar.";
-    atualizarSelect();
-}
-
-init();
+updateUI();
 
 </script>
 
