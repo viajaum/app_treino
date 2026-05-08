@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Treino Atualizado</title>
+<title>Treino Profissional</title>
 
 <style>
+
 *{
     box-sizing:border-box;
     font-family:system-ui;
@@ -14,43 +15,73 @@
 body{
     background:#0a0f1e;
     color:white;
+    margin:0;
     padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
 }
 
 .card{
     background:#141b2b;
-    border-radius:20px;
+    border-radius:24px;
     padding:20px;
     margin-bottom:20px;
 }
 
 .timer-display{
-    font-size:60px;
-    font-family:monospace;
+    font-size:70px;
     text-align:center;
-    margin:20px 0;
+    font-family:monospace;
+    font-weight:bold;
     color:#facc15;
+    margin:20px 0;
+}
+
+.exercise-name{
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.progress{
+    height:14px;
+    background:#1e293b;
+    border-radius:999px;
+    overflow:hidden;
+    margin-top:20px;
+}
+
+.progress-fill{
+    height:100%;
+    width:100%;
+    background:#3b82f6;
+    transition:width 1s linear;
 }
 
 .controls{
     display:flex;
     gap:10px;
     justify-content:center;
+    margin-top:20px;
     flex-wrap:wrap;
 }
 
 button{
     border:none;
-    border-radius:40px;
+    border-radius:999px;
     padding:12px 20px;
     cursor:pointer;
     color:white;
     font-weight:bold;
 }
 
-.btn-primary{ background:#3b82f6; }
+.btn-primary{ background:#2563eb; }
 .btn-danger{ background:#dc2626; }
 .btn-success{ background:#10b981; }
+.btn-warning{ background:#f59e0b; }
 
 .exercise-list{
     display:flex;
@@ -59,29 +90,54 @@ button{
 }
 
 .exercise-item{
-    display:flex;
-    gap:10px;
-    align-items:center;
     background:#1e293b;
-    padding:10px;
-    border-radius:14px;
+    border-radius:16px;
+    padding:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.exercise-item.current{
+    border:2px solid #facc15;
 }
 
 .exercise-item input{
     flex:1;
+    min-width:120px;
     background:#0f172a;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     padding:10px;
     color:white;
 }
 
+.time-box{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.time-box span{
+    min-width:50px;
+    text-align:center;
+    font-weight:bold;
+    color:#facc15;
+}
+
+.small-btn{
+    padding:6px 10px;
+    border-radius:10px;
+    background:#334155;
+}
+
 .lock-indicator{
     display:none;
+    text-align:center;
     background:#dc2626;
     padding:10px;
     border-radius:12px;
-    text-align:center;
     margin-bottom:15px;
     font-weight:bold;
 }
@@ -90,30 +146,22 @@ button{
     display:block;
 }
 
-/* ========================= */
-/* NOVO BLOQUEIO */
-/* ========================= */
-
-.locked .exercise-item input,
-.locked button,
-.locked select,
-.locked .config-item input,
-.locked .add-exercise input {
-    pointer-events: none !important;
-    opacity: 0.6;
-}
-
-/* libera controles principais */
-.locked #pauseBtn,
-.locked #resetBtn{
-    pointer-events:auto !important;
-    opacity:1 !important;
-}
-
 .status{
     margin-top:15px;
     text-align:center;
     color:#94a3b8;
+}
+
+/* ========================= */
+/* BLOQUEIA SÓ A EDIÇÃO */
+/* ========================= */
+
+.locked .exercise-item input,
+.locked .small-btn,
+.locked .add-exercise input,
+.locked .add-exercise button{
+    pointer-events:none;
+    opacity:.5;
 }
 
 </style>
@@ -121,42 +169,75 @@ button{
 
 <body>
 
+<div class="container">
+
 <div class="lock-indicator" id="lockIndicator">
 🔒 TREINO EM ANDAMENTO
 </div>
 
 <div class="card">
-    <div class="timer-display" id="timerDisplay">00:45</div>
 
-    <div class="controls">
-        <button id="startBtn" class="btn-primary">▶ INICIAR</button>
-        <button id="pauseBtn">⏸ PAUSAR</button>
-        <button id="resetBtn" class="btn-danger">⟳ RESETAR</button>
-    </div>
+<div class="exercise-name" id="exerciseName">
+Supino
+</div>
 
-    <div class="status" id="statusMessage">
-        edição liberada
-    </div>
+<div class="timer-display" id="timerDisplay">
+00:45
+</div>
+
+<div class="progress">
+<div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="controls">
+<button class="btn-primary" id="startBtn">
+▶ INICIAR
+</button>
+
+<button id="pauseBtn">
+⏸ PAUSAR
+</button>
+
+<button class="btn-danger" id="resetBtn">
+⟳ RESETAR
+</button>
+</div>
+
+<div class="status" id="statusMessage">
+✏️ edição liberada
+</div>
+
 </div>
 
 <div id="editableCards">
 
-    <div class="card">
+<div class="card">
 
-        <h2>💪 TREINO</h2>
+<h2>💪 TREINO</h2>
 
-        <div class="exercise-list" id="exerciseList"></div>
+<div class="exercise-list" id="exerciseList"></div>
 
-        <div class="controls add-exercise" style="margin-top:15px;">
-            <input type="text" id="exerciseName" placeholder="Novo exercício">
-            <button class="btn-success" id="addBtn">+ adicionar</button>
-        </div>
+<div class="controls add-exercise">
 
-    </div>
+<input type="text" id="newExerciseName" placeholder="Novo exercício">
+
+<button class="btn-success" id="addBtn">
++ adicionar
+</button>
+
+</div>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
+
+// =====================================
+// DADOS
+// =====================================
 
 let treino = [
     { name:"Supino", seconds:45 },
@@ -169,55 +250,136 @@ let timeLeft = treino[0].seconds;
 
 let timerInterval = null;
 let isRunning = false;
+let announcedNext = false;
+
+// =====================================
+// DOM
+// =====================================
 
 const timerDisplay = document.getElementById('timerDisplay');
+const exerciseName = document.getElementById('exerciseName');
+const progressFill = document.getElementById('progressFill');
 const exerciseList = document.getElementById('exerciseList');
 const editableCards = document.getElementById('editableCards');
-const lockIndicator = document.getElementById('lockIndicator');
 const statusMessage = document.getElementById('statusMessage');
+const lockIndicator = document.getElementById('lockIndicator');
+
+// =====================================
+// AUDIO
+// =====================================
+
+let audioActivated = false;
+
+function activateAudio(){
+
+    if(audioActivated) return;
+
+    audioActivated = true;
+
+    const ctx = new(window.AudioContext || window.webkitAudioContext)();
+
+    ctx.resume();
+
+    statusMessage.innerHTML =
+    '🔊 áudio ativado';
+
+}
+
+document.body.addEventListener(
+    'click',
+    activateAudio,
+    { once:true }
+);
+
+function speak(text){
+
+    if(!audioActivated) return;
+
+    speechSynthesis.cancel();
+
+    const utterance =
+    new SpeechSynthesisUtterance(text);
+
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.0;
+
+    speechSynthesis.speak(utterance);
+
+}
+
+function beep(freq=900,duration=.15){
+
+    if(!audioActivated) return;
+
+    const ctx =
+    new(window.AudioContext || window.webkitAudioContext)();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.frequency.value = freq;
+
+    osc.start();
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.00001,
+        ctx.currentTime + duration
+    );
+
+    osc.stop(ctx.currentTime + duration);
+
+}
+
+// =====================================
+// TIMER
+// =====================================
 
 function formatTime(seconds){
+
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
 
     return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-}
-
-function updateTimer(){
-    timerDisplay.textContent = formatTime(timeLeft);
-}
-
-function renderExercises(){
-
-    exerciseList.innerHTML = '';
-
-    treino.forEach((ex,index)=>{
-
-        const div = document.createElement('div');
-        div.className = 'exercise-item';
-
-        const input = document.createElement('input');
-        input.value = ex.name;
-
-        input.addEventListener('change',(e)=>{
-            treino[index].name = e.target.value;
-        });
-
-        const time = document.createElement('span');
-        time.textContent = `${ex.seconds}s`;
-
-        div.appendChild(input);
-        div.appendChild(time);
-
-        exerciseList.appendChild(div);
-
-    });
 
 }
 
-function setLockedMode(locked) {
+function updateUI(){
 
-    if (locked && isRunning) {
+    timerDisplay.textContent =
+    formatTime(timeLeft);
+
+    exerciseName.textContent =
+    treino[currentIndex]?.name || 'Fim';
+
+    const total =
+    treino[currentIndex]?.seconds || 1;
+
+    const percent =
+    (timeLeft / total) * 100;
+
+    progressFill.style.width =
+    `${percent}%`;
+
+    renderExercises();
+
+}
+
+function stopTimer(){
+
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+
+    isRunning = false;
+
+}
+
+function setLockedMode(locked){
+
+    if(locked && isRunning){
 
         editableCards.classList.add('locked');
 
@@ -226,7 +388,7 @@ function setLockedMode(locked) {
         statusMessage.innerHTML =
         '🔒 cronômetro rodando';
 
-    } else {
+    }else{
 
         editableCards.classList.remove('locked');
 
@@ -236,17 +398,40 @@ function setLockedMode(locked) {
         '✏️ edição liberada';
 
     }
+
 }
 
-function stopTimer(){
+// =====================================
+// AVISO PRÓXIMO EXERCÍCIO
+// =====================================
 
-    if(timerInterval){
-        clearInterval(timerInterval);
-        timerInterval = null;
+function announceNextIfNeeded(){
+
+    if(
+        timeLeft === 10 &&
+        currentIndex < treino.length - 1 &&
+        !announcedNext
+    ){
+
+        announcedNext = true;
+
+        const next =
+        treino[currentIndex + 1];
+
+        speak(
+            `Próximo exercício: ${next.name}, ${next.seconds} segundos`
+        );
+
+        statusMessage.innerHTML =
+        `🔊 próximo: ${next.name}`;
+
     }
 
-    isRunning = false;
 }
+
+// =====================================
+// START TIMER
+// =====================================
 
 function startActualTimer(){
 
@@ -264,9 +449,29 @@ function startActualTimer(){
 
             timeLeft--;
 
-            updateTimer();
+            updateUI();
+
+            announceNextIfNeeded();
+
+            // ======================
+            // CONTAGEM FINAL
+            // ======================
+
+            if(timeLeft === 3){
+                beep();
+            }
+
+            if(timeLeft === 2){
+                beep();
+            }
+
+            if(timeLeft === 1){
+                beep();
+            }
 
         }else{
+
+            beep(1200,.4);
 
             stopTimer();
 
@@ -274,16 +479,30 @@ function startActualTimer(){
 
                 currentIndex++;
 
-                timeLeft = treino[currentIndex].seconds;
+                announcedNext = false;
+
+                timeLeft =
+                treino[currentIndex].seconds;
+
+                speak(
+                    treino[currentIndex].name
+                );
 
                 startActualTimer();
 
             }else{
 
+                exerciseName.textContent =
+                '🏆 treino finalizado';
+
                 statusMessage.innerHTML =
                 '🏆 treino finalizado';
 
                 setLockedMode(false);
+
+                speak(
+                    'Treino finalizado'
+                );
 
             }
 
@@ -293,49 +512,63 @@ function startActualTimer(){
 
 }
 
+// =====================================
+// START
+// =====================================
+
 function startTreino(){
 
-    if (!isRunning) {
+    if(isRunning) return;
 
-        // =========================
-        // CONTINUA DO PONTO PAUSADO
-        // =========================
+    // ======================
+    // CONTINUA DO PAUSE
+    // ======================
 
-        if (
-            timeLeft > 0 &&
-            timeLeft < treino[currentIndex].seconds
-        ) {
+    if(
+        timeLeft > 0 &&
+        timeLeft <
+        treino[currentIndex].seconds
+    ){
 
-            startActualTimer();
+        startActualTimer();
 
-        } else {
+    }else{
 
-            timeLeft = treino[currentIndex].seconds;
+        timeLeft =
+        treino[currentIndex].seconds;
 
-            updateTimer();
+        speak(
+            treino[currentIndex].name
+        );
 
-            startActualTimer();
-
-        }
+        startActualTimer();
 
     }
 
 }
+
+// =====================================
+// PAUSE
+// =====================================
 
 function pauseTreino(){
 
-    if(isRunning){
+    if(!isRunning) return;
 
-        stopTimer();
+    stopTimer();
 
-        setLockedMode(false);
+    setLockedMode(false);
 
-        statusMessage.innerHTML =
-        '⏸ pausado — edição liberada';
+    speechSynthesis.cancel();
 
-    }
+    statusMessage.innerHTML =
+    '⏸ pausado — edição liberada';
 
 }
+
+// =====================================
+// RESET
+// =====================================
 
 function resetTreino(){
 
@@ -343,34 +576,183 @@ function resetTreino(){
 
     currentIndex = 0;
 
-    timeLeft = treino[0].seconds;
+    timeLeft =
+    treino[0].seconds;
 
-    updateTimer();
+    announcedNext = false;
+
+    updateUI();
 
     setLockedMode(false);
+
+    speechSynthesis.cancel();
 
     statusMessage.innerHTML =
     '🔄 resetado';
 
 }
 
-document.getElementById('startBtn')
-.addEventListener('click',startTreino);
+// =====================================
+// RENDER
+// =====================================
 
-document.getElementById('pauseBtn')
-.addEventListener('click',pauseTreino);
+function renderExercises(){
 
-document.getElementById('resetBtn')
-.addEventListener('click',resetTreino);
+    exerciseList.innerHTML = '';
+
+    treino.forEach((ex,index)=>{
+
+        const div =
+        document.createElement('div');
+
+        div.className =
+        'exercise-item';
+
+        if(index === currentIndex){
+            div.classList.add('current');
+        }
+
+        // ======================
+        // NOME
+        // ======================
+
+        const input =
+        document.createElement('input');
+
+        input.value = ex.name;
+
+        input.addEventListener('change',(e)=>{
+
+            treino[index].name =
+            e.target.value;
+
+            updateUI();
+
+        });
+
+        // ======================
+        // TEMPO
+        // ======================
+
+        const timeBox =
+        document.createElement('div');
+
+        timeBox.className =
+        'time-box';
+
+        const minus =
+        document.createElement('button');
+
+        minus.className =
+        'small-btn';
+
+        minus.textContent =
+        '-5';
+
+        minus.onclick = ()=>{
+
+            treino[index].seconds =
+            Math.max(
+                5,
+                treino[index].seconds - 5
+            );
+
+            if(index === currentIndex){
+                timeLeft =
+                treino[index].seconds;
+            }
+
+            updateUI();
+
+        };
+
+        const span =
+        document.createElement('span');
+
+        span.textContent =
+        `${ex.seconds}s`;
+
+        const plus =
+        document.createElement('button');
+
+        plus.className =
+        'small-btn';
+
+        plus.textContent =
+        '+5';
+
+        plus.onclick = ()=>{
+
+            treino[index].seconds += 5;
+
+            if(index === currentIndex){
+                timeLeft =
+                treino[index].seconds;
+            }
+
+            updateUI();
+
+        };
+
+        timeBox.appendChild(minus);
+        timeBox.appendChild(span);
+        timeBox.appendChild(plus);
+
+        // ======================
+        // REMOVER
+        // ======================
+
+        const del =
+        document.createElement('button');
+
+        del.className =
+        'btn-danger';
+
+        del.textContent =
+        '🗑';
+
+        del.onclick = ()=>{
+
+            treino.splice(index,1);
+
+            if(currentIndex >= treino.length){
+                currentIndex =
+                treino.length - 1;
+            }
+
+            if(treino.length > 0){
+                timeLeft =
+                treino[currentIndex].seconds;
+            }
+
+            updateUI();
+
+        };
+
+        div.appendChild(input);
+        div.appendChild(timeBox);
+        div.appendChild(del);
+
+        exerciseList.appendChild(div);
+
+    });
+
+}
+
+// =====================================
+// ADD
+// =====================================
 
 document.getElementById('addBtn')
-.addEventListener('click',()=>{
+.onclick = ()=>{
 
     if(isRunning) return;
 
-    const input = document.getElementById('exerciseName');
+    const input =
+    document.getElementById('newExerciseName');
 
-    const name = input.value.trim();
+    const name =
+    input.value.trim();
 
     if(!name) return;
 
@@ -381,12 +763,28 @@ document.getElementById('addBtn')
 
     input.value = '';
 
-    renderExercises();
+    updateUI();
 
-});
+};
 
-renderExercises();
-updateTimer();
+// =====================================
+// BOTÕES
+// =====================================
+
+document.getElementById('startBtn')
+.onclick = startTreino;
+
+document.getElementById('pauseBtn')
+.onclick = pauseTreino;
+
+document.getElementById('resetBtn')
+.onclick = resetTreino;
+
+// =====================================
+// INIT
+// =====================================
+
+updateUI();
 
 </script>
 
