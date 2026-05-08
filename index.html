@@ -1,3 +1,4 @@
+```html id="h3w7pk"
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -32,7 +33,7 @@ body{
 }
 
 .timer-display{
-    font-size:70px;
+    font-size:72px;
     text-align:center;
     font-family:monospace;
     font-weight:bold;
@@ -42,7 +43,7 @@ body{
 
 .exercise-name{
     text-align:center;
-    font-size:28px;
+    font-size:30px;
     font-weight:bold;
 }
 
@@ -81,7 +82,6 @@ button{
 .btn-primary{ background:#2563eb; }
 .btn-danger{ background:#dc2626; }
 .btn-success{ background:#10b981; }
-.btn-warning{ background:#f59e0b; }
 
 .exercise-list{
     display:flex;
@@ -120,7 +120,7 @@ button{
 }
 
 .time-box span{
-    min-width:50px;
+    min-width:55px;
     text-align:center;
     font-weight:bold;
     color:#facc15;
@@ -130,6 +130,11 @@ button{
     padding:6px 10px;
     border-radius:10px;
     background:#334155;
+}
+
+.move-buttons{
+    display:flex;
+    gap:5px;
 }
 
 .lock-indicator{
@@ -152,12 +157,32 @@ button{
     color:#94a3b8;
 }
 
-/* ========================= */
-/* BLOQUEIA SÓ A EDIÇÃO */
-/* ========================= */
+.countdown{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.9);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:9999;
+}
+
+.countdown-number{
+    font-size:140px;
+    font-weight:bold;
+    color:#facc15;
+}
+
+.countdown-text{
+    font-size:24px;
+}
+
+/* trava só edição */
 
 .locked .exercise-item input,
 .locked .small-btn,
+.locked .move-btn,
 .locked .add-exercise input,
 .locked .add-exercise button{
     pointer-events:none;
@@ -235,9 +260,9 @@ Supino
 
 <script>
 
-// =====================================
+// ======================================
 // DADOS
-// =====================================
+// ======================================
 
 let treino = [
     { name:"Supino", seconds:45 },
@@ -252,21 +277,34 @@ let timerInterval = null;
 let isRunning = false;
 let announcedNext = false;
 
-// =====================================
+// ======================================
 // DOM
-// =====================================
+// ======================================
 
-const timerDisplay = document.getElementById('timerDisplay');
-const exerciseName = document.getElementById('exerciseName');
-const progressFill = document.getElementById('progressFill');
-const exerciseList = document.getElementById('exerciseList');
-const editableCards = document.getElementById('editableCards');
-const statusMessage = document.getElementById('statusMessage');
-const lockIndicator = document.getElementById('lockIndicator');
+const timerDisplay =
+document.getElementById('timerDisplay');
 
-// =====================================
-// AUDIO
-// =====================================
+const exerciseName =
+document.getElementById('exerciseName');
+
+const progressFill =
+document.getElementById('progressFill');
+
+const exerciseList =
+document.getElementById('exerciseList');
+
+const editableCards =
+document.getElementById('editableCards');
+
+const statusMessage =
+document.getElementById('statusMessage');
+
+const lockIndicator =
+document.getElementById('lockIndicator');
+
+// ======================================
+// ÁUDIO
+// ======================================
 
 let audioActivated = false;
 
@@ -276,7 +314,9 @@ function activateAudio(){
 
     audioActivated = true;
 
-    const ctx = new(window.AudioContext || window.webkitAudioContext)();
+    const ctx =
+    new(window.AudioContext ||
+    window.webkitAudioContext)();
 
     ctx.resume();
 
@@ -301,7 +341,7 @@ function speak(text){
     new SpeechSynthesisUtterance(text);
 
     utterance.lang = 'pt-BR';
-    utterance.rate = 1.0;
+    utterance.rate = 1;
 
     speechSynthesis.speak(utterance);
 
@@ -312,7 +352,8 @@ function beep(freq=900,duration=.15){
     if(!audioActivated) return;
 
     const ctx =
-    new(window.AudioContext || window.webkitAudioContext)();
+    new(window.AudioContext ||
+    window.webkitAudioContext)();
 
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -333,14 +374,17 @@ function beep(freq=900,duration=.15){
 
 }
 
-// =====================================
+// ======================================
 // TIMER
-// =====================================
+// ======================================
 
 function formatTime(seconds){
 
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const mins =
+    Math.floor(seconds / 60);
+
+    const secs =
+    seconds % 60;
 
     return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
 
@@ -357,11 +401,8 @@ function updateUI(){
     const total =
     treino[currentIndex]?.seconds || 1;
 
-    const percent =
-    (timeLeft / total) * 100;
-
     progressFill.style.width =
-    `${percent}%`;
+    `${(timeLeft / total) * 100}%`;
 
     renderExercises();
 
@@ -401,9 +442,86 @@ function setLockedMode(locked){
 
 }
 
-// =====================================
-// AVISO PRÓXIMO EXERCÍCIO
-// =====================================
+// ======================================
+// CONTAGEM 3 2 1
+// ======================================
+
+function showCountdown(callback){
+
+    const overlay =
+    document.createElement('div');
+
+    overlay.className =
+    'countdown';
+
+    const number =
+    document.createElement('div');
+
+    number.className =
+    'countdown-number';
+
+    const text =
+    document.createElement('div');
+
+    text.className =
+    'countdown-text';
+
+    overlay.appendChild(number);
+    overlay.appendChild(text);
+
+    document.body.appendChild(overlay);
+
+    let count = 3;
+
+    function update(){
+
+        number.textContent = count;
+
+        if(count > 0){
+
+            speak(String(count));
+
+            beep();
+
+        }else{
+
+            number.textContent = 'VAI';
+
+            speak('Vai');
+
+            beep(1200,.4);
+
+        }
+
+    }
+
+    update();
+
+    const interval = setInterval(()=>{
+
+        count--;
+
+        if(count >= 0){
+
+            update();
+
+        }else{
+
+            clearInterval(interval);
+
+            overlay.remove();
+
+            callback();
+
+        }
+
+    },1000);
+
+}
+
+// ======================================
+// AVISO PRÓXIMO
+// ======================================
 
 function announceNextIfNeeded(){
 
@@ -419,7 +537,7 @@ function announceNextIfNeeded(){
         treino[currentIndex + 1];
 
         speak(
-            `Próximo exercício: ${next.name}, ${next.seconds} segundos`
+            `Próximo exercício: ${next.name}`
         );
 
         statusMessage.innerHTML =
@@ -429,9 +547,9 @@ function announceNextIfNeeded(){
 
 }
 
-// =====================================
-// START TIMER
-// =====================================
+// ======================================
+// TIMER REAL
+// ======================================
 
 function startActualTimer(){
 
@@ -453,21 +571,9 @@ function startActualTimer(){
 
             announceNextIfNeeded();
 
-            // ======================
-            // CONTAGEM FINAL
-            // ======================
-
-            if(timeLeft === 3){
-                beep();
-            }
-
-            if(timeLeft === 2){
-                beep();
-            }
-
-            if(timeLeft === 1){
-                beep();
-            }
+            if(timeLeft === 3) beep();
+            if(timeLeft === 2) beep();
+            if(timeLeft === 1) beep();
 
         }else{
 
@@ -498,11 +604,11 @@ function startActualTimer(){
                 statusMessage.innerHTML =
                 '🏆 treino finalizado';
 
-                setLockedMode(false);
-
                 speak(
                     'Treino finalizado'
                 );
+
+                setLockedMode(false);
 
             }
 
@@ -512,17 +618,15 @@ function startActualTimer(){
 
 }
 
-// =====================================
+// ======================================
 // START
-// =====================================
+// ======================================
 
 function startTreino(){
 
     if(isRunning) return;
 
-    // ======================
-    // CONTINUA DO PAUSE
-    // ======================
+    // continuar pause
 
     if(
         timeLeft > 0 &&
@@ -537,19 +641,29 @@ function startTreino(){
         timeLeft =
         treino[currentIndex].seconds;
 
+        updateUI();
+
         speak(
             treino[currentIndex].name
         );
 
-        startActualTimer();
+        setTimeout(()=>{
+
+            showCountdown(()=>{
+
+                startActualTimer();
+
+            });
+
+        },1200);
 
     }
 
 }
 
-// =====================================
+// ======================================
 // PAUSE
-// =====================================
+// ======================================
 
 function pauseTreino(){
 
@@ -562,13 +676,13 @@ function pauseTreino(){
     speechSynthesis.cancel();
 
     statusMessage.innerHTML =
-    '⏸ pausado — edição liberada';
+    '⏸ pausado';
 
 }
 
-// =====================================
+// ======================================
 // RESET
-// =====================================
+// ======================================
 
 function resetTreino(){
 
@@ -581,20 +695,20 @@ function resetTreino(){
 
     announcedNext = false;
 
+    speechSynthesis.cancel();
+
     updateUI();
 
     setLockedMode(false);
-
-    speechSynthesis.cancel();
 
     statusMessage.innerHTML =
     '🔄 resetado';
 
 }
 
-// =====================================
+// ======================================
 // RENDER
-// =====================================
+// ======================================
 
 function renderExercises(){
 
@@ -612,27 +726,23 @@ function renderExercises(){
             div.classList.add('current');
         }
 
-        // ======================
-        // NOME
-        // ======================
+        // nome
 
         const input =
         document.createElement('input');
 
         input.value = ex.name;
 
-        input.addEventListener('change',(e)=>{
+        input.onchange = (e)=>{
 
             treino[index].name =
             e.target.value;
 
             updateUI();
 
-        });
+        };
 
-        // ======================
-        // TEMPO
-        // ======================
+        // tempo
 
         const timeBox =
         document.createElement('div');
@@ -698,9 +808,72 @@ function renderExercises(){
         timeBox.appendChild(span);
         timeBox.appendChild(plus);
 
-        // ======================
-        // REMOVER
-        // ======================
+        // mover posição
+
+        const moveDiv =
+        document.createElement('div');
+
+        moveDiv.className =
+        'move-buttons';
+
+        const up =
+        document.createElement('button');
+
+        up.className =
+        'small-btn move-btn';
+
+        up.textContent =
+        '▲';
+
+        up.disabled =
+        index === 0;
+
+        up.onclick = ()=>{
+
+            [treino[index-1], treino[index]] =
+            [treino[index], treino[index-1]];
+
+            if(currentIndex === index){
+                currentIndex--;
+            }else if(currentIndex === index-1){
+                currentIndex++;
+            }
+
+            updateUI();
+
+        };
+
+        const down =
+        document.createElement('button');
+
+        down.className =
+        'small-btn move-btn';
+
+        down.textContent =
+        '▼';
+
+        down.disabled =
+        index === treino.length - 1;
+
+        down.onclick = ()=>{
+
+            [treino[index+1], treino[index]] =
+            [treino[index], treino[index+1]];
+
+            if(currentIndex === index){
+                currentIndex++;
+            }else if(currentIndex === index+1){
+                currentIndex--;
+            }
+
+            updateUI();
+
+        };
+
+        moveDiv.appendChild(up);
+        moveDiv.appendChild(down);
+
+        // excluir
 
         const del =
         document.createElement('button');
@@ -731,6 +904,7 @@ function renderExercises(){
 
         div.appendChild(input);
         div.appendChild(timeBox);
+        div.appendChild(moveDiv);
         div.appendChild(del);
 
         exerciseList.appendChild(div);
@@ -739,9 +913,9 @@ function renderExercises(){
 
 }
 
-// =====================================
+// ======================================
 // ADD
-// =====================================
+// ======================================
 
 document.getElementById('addBtn')
 .onclick = ()=>{
@@ -767,9 +941,9 @@ document.getElementById('addBtn')
 
 };
 
-// =====================================
+// ======================================
 // BOTÕES
-// =====================================
+// ======================================
 
 document.getElementById('startBtn')
 .onclick = startTreino;
@@ -780,9 +954,9 @@ document.getElementById('pauseBtn')
 document.getElementById('resetBtn')
 .onclick = resetTreino;
 
-// =====================================
+// ======================================
 // INIT
-// =====================================
+// ======================================
 
 updateUI();
 
@@ -790,3 +964,4 @@ updateUI();
 
 </body>
 </html>
+```
