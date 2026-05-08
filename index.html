@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Treino Profissional - Carregar JSON</title>
+<title>Treino Profissional - Lista de Exercícios</title>
 
 <style>
 
@@ -183,6 +183,68 @@ button{
     color:#94a3b8;
 }
 
+/* Lista de exercícios */
+.exercise-list-card{
+    background:#0f172a;
+    border-radius:16px;
+    padding:15px;
+    margin-top:15px;
+}
+
+.exercise-list-card h3{
+    margin:0 0 15px 0;
+    font-size:18px;
+    color:#60a5fa;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.exercise-list-container{
+    max-height:300px;
+    overflow-y:auto;
+}
+
+.exercise-list-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 12px;
+    border-bottom:1px solid #1e293b;
+    font-size:14px;
+}
+
+.exercise-list-item.current{
+    background:#1e3a5f;
+    border-radius:12px;
+    border-left:4px solid #facc15;
+}
+
+.exercise-list-item .ex-name{
+    flex:2;
+    color:#e2e8f0;
+}
+
+.exercise-list-item .ex-time{
+    color:#facc15;
+    font-family:monospace;
+    font-weight:bold;
+}
+
+.exercise-list-item .ex-status{
+    width:24px;
+    text-align:center;
+}
+
+.exercise-list-item.completed{
+    opacity:0.5;
+    background:#0f1422;
+}
+
+.exercise-list-item.completed .ex-name{
+    text-decoration:line-through;
+}
+
 </style>
 </head>
 
@@ -238,8 +300,14 @@ Carregue um treino
 <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
 <button id="importJsonBtn" class="btn-primary" style="font-size:18px; padding:15px 30px;">📂 SELECIONAR ARQUIVO JSON</button>
 <div class="file-info">
-Exemplo de arquivo: treino.json com { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }
+Exemplo: treino.json com { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }
 </div>
+</div>
+
+<!-- Lista de exercícios -->
+<div class="exercise-list-card" id="exerciseListCard" style="display:none;">
+<h3>📋 LISTA DE EXERCÍCIOS</h3>
+<div class="exercise-list-container" id="exerciseListContainer"></div>
 </div>
 
 </div>
@@ -282,6 +350,8 @@ const nextExerciseSpan = document.getElementById('nextExercise');
 const progressFill = document.getElementById('progressFill');
 const statusMessage = document.getElementById('statusMessage');
 const lockIndicator = document.getElementById('lockIndicator');
+const exerciseListCard = document.getElementById('exerciseListCard');
+const exerciseListContainer = document.getElementById('exerciseListContainer');
 
 // ======================================
 // ÁUDIO
@@ -374,6 +444,67 @@ function updateUINextExercise(){
     }
 }
 
+// ======================================
+// RENDERIZAR LISTA DE EXERCÍCIOS
+// ======================================
+
+function renderExerciseList(){
+    if(!fullWorkflow.length){
+        exerciseListCard.style.display = 'none';
+        return;
+    }
+    
+    exerciseListCard.style.display = 'block';
+    exerciseListContainer.innerHTML = '';
+    
+    fullWorkflow.forEach((step, index) => {
+        const item = document.createElement('div');
+        item.className = 'exercise-list-item';
+        
+        if(index === currentStepIndex){
+            item.classList.add('current');
+        }
+        
+        if(index < currentStepIndex){
+            item.classList.add('completed');
+        }
+        
+        const statusSpan = document.createElement('span');
+        statusSpan.className = 'ex-status';
+        if(index < currentStepIndex){
+            statusSpan.textContent = '✅';
+        }else if(index === currentStepIndex){
+            statusSpan.textContent = '▶';
+        }else{
+            statusSpan.textContent = '○';
+        }
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'ex-name';
+        let displayName = step.name;
+        if(step.etapa === 'treino' && step.round){
+            displayName = `[${step.round}] ${step.name}`;
+        }else if(step.etapa === 'aquecimento'){
+            displayName = `🔥 ${step.name}`;
+        }else if(step.etapa === 'desaquecimento'){
+            displayName = `🧘 ${step.name}`;
+        }else if(step.type === 'rest'){
+            displayName = `⏸️ ${step.name}`;
+        }
+        nameSpan.textContent = displayName;
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'ex-time';
+        timeSpan.textContent = formatTime(step.seconds);
+        
+        item.appendChild(statusSpan);
+        item.appendChild(nameSpan);
+        item.appendChild(timeSpan);
+        
+        exerciseListContainer.appendChild(item);
+    });
+}
+
 function updateUI(){
     if(!fullWorkflow.length || currentStepIndex >= fullWorkflow.length){
         timerDisplay.textContent = formatTime(0);
@@ -382,6 +513,7 @@ function updateUI(){
         roundInfo.textContent = "";
         nextExerciseSpan.textContent = "";
         progressFill.style.width = "0%";
+        renderExerciseList();
         return;
     }
     const step = fullWorkflow[currentStepIndex];
@@ -392,6 +524,7 @@ function updateUI(){
     totalTimerDisplay.textContent = `⏱️ TOTAL: ${formatTime(totalTimeLeft)}`;
     
     updateUINextExercise();
+    renderExerciseList();
     
     if(step.etapa === 'aquecimento'){
         stageCategory.textContent = '🔥 AQUECIMENTO';
@@ -481,7 +614,7 @@ function generateWorkflow(){
         workflow.push({
             type: 'rest',
             etapa: 'transicao',
-            name: 'Transição',
+            name: '⏸️ Transição',
             seconds: restAquecimentoToTreino
         });
     }
@@ -501,7 +634,7 @@ function generateWorkflow(){
             workflow.push({
                 type: 'rest',
                 etapa: 'descanso_entre_series',
-                name: 'Descanso',
+                name: '⏸️ Descanso',
                 seconds: restBetweenRounds,
                 round: round
             });
@@ -512,7 +645,7 @@ function generateWorkflow(){
         workflow.push({
             type: 'rest',
             etapa: 'transicao',
-            name: 'Transição',
+            name: '⏸️ Transição',
             seconds: restTreinoToDesaquecimento
         });
     }
