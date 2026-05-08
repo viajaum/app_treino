@@ -68,6 +68,20 @@ body{
     margin-top:5px;
 }
 
+.next-exercise{
+    text-align:center;
+    font-size:16px;
+    color:#facc15;
+    margin-top:10px;
+    background:#1e293b;
+    display:inline-block;
+    padding:6px 16px;
+    border-radius:40px;
+    width:auto;
+    margin-left:auto;
+    margin-right:auto;
+}
+
 .progress{
     height:14px;
     background:#1e293b;
@@ -276,6 +290,9 @@ Carregando...
 <div class="round-info" id="roundInfo">
 </div>
 
+<div class="next-exercise" id="nextExercise">
+</div>
+
 <div class="timer-display" id="timerDisplay">
 00:00
 </div>
@@ -394,7 +411,6 @@ let currentStepIndex = 0;
 let timeLeft = 0;
 let timerInterval = null;
 let isRunning = false;
-let announcedNext = false;
 let totalTimeSeconds = 0;
 let totalTimeLeft = 0;
 
@@ -407,6 +423,7 @@ const totalTimerDisplay = document.getElementById('totalTimerDisplay');
 const exerciseName = document.getElementById('exerciseName');
 const stageCategory = document.getElementById('stageCategory');
 const roundInfo = document.getElementById('roundInfo');
+const nextExerciseSpan = document.getElementById('nextExercise');
 const progressFill = document.getElementById('progressFill');
 const editableCards = document.getElementById('editableCards');
 const statusMessage = document.getElementById('statusMessage');
@@ -508,6 +525,7 @@ function updateUI(){
         exerciseName.textContent = "🏆 FIM!";
         stageCategory.textContent = "PARABÉNS!";
         roundInfo.textContent = "";
+        nextExerciseSpan.textContent = "";
         progressFill.style.width = "0%";
         return;
     }
@@ -517,6 +535,20 @@ function updateUI(){
     progressFill.style.width = `${(timeLeft / totalTime) * 100}%`;
     exerciseName.textContent = step.name;
     totalTimerDisplay.textContent = `⏱️ TOTAL: ${formatTime(totalTimeLeft)}`;
+    
+    // Mostra próximo exercício visualmente
+    if(currentStepIndex + 1 < fullWorkflow.length){
+        const nextStep = fullWorkflow[currentStepIndex + 1];
+        const timeText = formatTimeToText(nextStep.seconds);
+        if(nextStep.type === 'rest'){
+            nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO - ${timeText}`;
+        }else{
+            nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name} - ${timeText}`;
+            if(nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (Rodada ${nextStep.round})`;
+        }
+    }else{
+        nextExerciseSpan.textContent = `⏩ Último exercício!`;
+    }
     
     if(step.etapa === 'aquecimento'){
         stageCategory.textContent = '🔥 AQUECIMENTO';
@@ -534,24 +566,9 @@ function updateUI(){
     renderAllLists();
 }
 
-function announceNextIfNeeded(){
-    if(timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !announcedNext){
-        announcedNext = true;
-        const nextStep = fullWorkflow[currentStepIndex + 1];
-        if(nextStep){
-            const timeText = formatTimeToText(nextStep.seconds);
-            let msg = '';
-            if(nextStep.type === 'rest'){
-                msg = `Próximo: descanso, ${timeText}`;
-            }else{
-                msg = `Próximo: ${nextStep.name}, ${timeText}`;
-                if(nextStep.etapa === 'treino') msg += `, rodada ${nextStep.round}`;
-            }
-            speak(msg);
-            statusMessage.innerHTML = `🔊 ${msg}`;
-        }
-    }
-}
+// ======================================
+// CONTAGEM APENAS COM BIP
+// ======================================
 
 function showCountdown(callback){
     const overlay = document.createElement('div');
@@ -567,11 +584,9 @@ function showCountdown(callback){
     function update(){
         number.textContent = count;
         if(count > 0){
-            speak(String(count));
             beep();
         }else{
             number.textContent = 'VAI!';
-            speak('Vai!');
             beep(1200, .4);
         }
     }
@@ -693,7 +708,6 @@ function startActualTimer(){
             timeLeft--;
             totalTimeLeft--;
             updateUI();
-            announceNextIfNeeded();
             
             if(timeLeft === 3) beep();
             if(timeLeft === 2) beep();
@@ -706,7 +720,6 @@ function startActualTimer(){
             
             if(currentStepIndex + 1 < fullWorkflow.length){
                 currentStepIndex++;
-                announcedNext = false;
                 timeLeft = fullWorkflow[currentStepIndex].seconds;
                 updateUI();
                 
@@ -736,7 +749,7 @@ function startActualTimer(){
     }, 1000);
 }
 
-function startFirstExerciseWithCountdown(){
+function startFirstExercise(){
     if(currentStepIndex >= fullWorkflow.length) return;
     
     const step = fullWorkflow[currentStepIndex];
@@ -763,8 +776,7 @@ function startTreino(){
     }
     if(currentStepIndex >= fullWorkflow.length) resetTreino();
     if(!isRunning && currentStepIndex < fullWorkflow.length){
-        announcedNext = false;
-        startFirstExerciseWithCountdown();
+        startFirstExercise();
     }
 }
 
@@ -781,7 +793,6 @@ function resetTreino(){
         if(confirm("Resetar o treino?")){
             stopTimer();
             isRunning = false;
-            announcedNext = false;
             setLockedMode(false);
             rebuildWorkflow();
             if(fullWorkflow.length > 0){
@@ -796,7 +807,6 @@ function resetTreino(){
     }else{
         stopTimer();
         isRunning = false;
-        announcedNext = false;
         setLockedMode(false);
         rebuildWorkflow();
         if(fullWorkflow.length > 0){
@@ -1015,7 +1025,6 @@ function carregarTreino(nome){
         
         stopTimer();
         isRunning = false;
-        announcedNext = false;
         setLockedMode(false);
         rebuildWorkflow();
         if(fullWorkflow.length > 0){
