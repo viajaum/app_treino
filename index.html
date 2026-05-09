@@ -102,10 +102,14 @@ button {
     color: white;
     font-weight: bold;
     font-size: 0.9rem;
-    transition: transform 0.1s;
+    transition: transform 0.1s, opacity 0.2s;
 }
 button:active {
     transform: scale(0.96);
+}
+button.disabled-btn {
+    opacity: 0.5;
+    pointer-events: none !important;
 }
 .btn-primary { background: #2563eb; }
 .btn-danger { background: #dc2626; }
@@ -124,6 +128,11 @@ button:active {
     padding: 12px;
     margin-bottom: 15px;
     text-align: center;
+    transition: opacity 0.3s;
+}
+.import-json.disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 .file-info {
     margin-top: 8px;
@@ -135,6 +144,11 @@ button:active {
     border-radius: 1rem;
     padding: 12px;
     margin-top: 15px;
+    transition: opacity 0.3s;
+}
+.exercise-list-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 .exercise-list-card h3 {
     margin: 0 0 12px 0;
@@ -229,12 +243,9 @@ button:active {
     background: #334155;
     margin-top: 20px;
     padding: 10px 24px;
-}
-
-/* Desabilitar todos os botões durante trava */
-.btn-disabled, button:disabled {
-    opacity: 0.5;
-    pointer-events: none !important;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
 }
 </style>
 </head>
@@ -258,7 +269,7 @@ button:active {
         <div class="status" id="statusMessage">📁 Selecione um arquivo JSON</div>
     </div>
 
-    <div class="import-json">
+    <div class="import-json" id="importJsonDiv">
         <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
         <button id="importJsonBtn" class="btn-primary">📂 SELECIONAR JSON</button>
         <div class="file-info">Exemplo: { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }</div>
@@ -273,11 +284,12 @@ button:active {
 <script>
 // ==============================
 // PADRÃO DE DESBLOQUEIO (3x3)
-// Padrão padrão: 1-2-3-6-9
+// Padrão: 1-2-3-6-9
 // ==============================
 const DEFAULT_PATTERN = [0, 1, 2, 5, 8];
 let selectedPoints = [];
 let isScreenLocked = false;
+let isTravaAtiva = false;  // Variável global de controle
 
 // Áudio e variáveis do treino
 let aquecimento = [], treino = [], desaquecimento = [];
@@ -303,38 +315,29 @@ const importJsonBtn = document.getElementById('importJsonBtn');
 const jsonFileInput = document.getElementById('jsonFileInput');
 const exerciseListCard = document.getElementById('exerciseListCard');
 const exerciseListContainer = document.getElementById('exerciseListContainer');
+const importJsonDiv = document.getElementById('importJsonDiv');
 
 // ========== FUNÇÕES DE TRAVA ==========
-function disableAllButtons() {
-    // Desabilita todos os botões da interface
-    startBtn.disabled = true;
-    pauseBtn.disabled = true;
-    resetBtn.disabled = true;
-    importJsonBtn.disabled = true;
-    lockScreenBtn.disabled = true;
-    
-    // Adiciona classe para desabilitar CSS também
-    startBtn.classList.add('btn-disabled');
-    pauseBtn.classList.add('btn-disabled');
-    resetBtn.classList.add('btn-disabled');
-    importJsonBtn.classList.add('btn-disabled');
-    lockScreenBtn.classList.add('btn-disabled');
+function disableAllUI() {
+    isTravaAtiva = true;
+    startBtn.classList.add('disabled-btn');
+    pauseBtn.classList.add('disabled-btn');
+    resetBtn.classList.add('disabled-btn');
+    importJsonBtn.classList.add('disabled-btn');
+    lockScreenBtn.classList.add('disabled-btn');
+    importJsonDiv.classList.add('disabled');
+    exerciseListCard.classList.add('disabled');
 }
 
-function enableAllButtons() {
-    // Habilita todos os botões
-    startBtn.disabled = false;
-    pauseBtn.disabled = false;
-    resetBtn.disabled = false;
-    importJsonBtn.disabled = false;
-    lockScreenBtn.disabled = false;
-    
-    // Remove classe de desabilitação
-    startBtn.classList.remove('btn-disabled');
-    pauseBtn.classList.remove('btn-disabled');
-    resetBtn.classList.remove('btn-disabled');
-    importJsonBtn.classList.remove('btn-disabled');
-    lockScreenBtn.classList.remove('btn-disabled');
+function enableAllUI() {
+    isTravaAtiva = false;
+    startBtn.classList.remove('disabled-btn');
+    pauseBtn.classList.remove('disabled-btn');
+    resetBtn.classList.remove('disabled-btn');
+    importJsonBtn.classList.remove('disabled-btn');
+    lockScreenBtn.classList.remove('disabled-btn');
+    importJsonDiv.classList.remove('disabled');
+    exerciseListCard.classList.remove('disabled');
 }
 
 function showLockScreen() {
@@ -342,8 +345,8 @@ function showLockScreen() {
     isScreenLocked = true;
     selectedPoints = [];
     
-    // Desabilita todos os botões
-    disableAllButtons();
+    // Desabilita toda a interface
+    disableAllUI();
     
     // Criar overlay de trava
     const lockOverlay = document.createElement('div');
@@ -368,7 +371,6 @@ function showLockScreen() {
         dot.dataset.index = i;
         dot.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Só permite clicar se não estiver travado
             if (!isScreenLocked) return;
             const idx = parseInt(dot.dataset.index);
             if (!selectedPoints.includes(idx)) {
@@ -428,8 +430,8 @@ function hideLockScreen() {
     if (lockOverlay) lockOverlay.remove();
     isScreenLocked = false;
     
-    // Reabilita todos os botões
-    enableAllButtons();
+    // Reabilita toda a interface
+    enableAllUI();
     
     statusMessage.innerHTML = '✅ Tela destravada!';
     setTimeout(() => {
@@ -453,7 +455,7 @@ function formatTimeToText(seconds) {
 }
 
 function speak(text) {
-    if (!audioActivated || !text) return;
+    if (!audioActivated || !text || isTravaAtiva) return;
     try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -464,7 +466,7 @@ function speak(text) {
 }
 
 function beep(freq=900, duration=.15) {
-    if (!audioActivated) return;
+    if (!audioActivated || isTravaAtiva) return;
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -655,12 +657,14 @@ function startFirstExercise() {
 }
 
 function startTreino() {
+    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     if (!treinoCarregado) { statusMessage.innerHTML = "❌ Carregue um JSON primeiro!"; return; }
     if (currentStepIndex >= fullWorkflow.length) resetTreino();
     if (!isRunning && currentStepIndex < fullWorkflow.length) startFirstExercise();
 }
 
 function pauseTreino() {
+    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     if (!isRunning) return;
     if (confirm("PAUSAR O TREINO?")) {
         stopTimer();
@@ -671,6 +675,7 @@ function pauseTreino() {
 }
 
 function resetTreino() {
+    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     if (!treinoCarregado) return;
     if (isRunning) {
         if (confirm("RESETAR O TREINO?")) {
@@ -719,6 +724,7 @@ function rebuildWorkflow() {
 }
 
 function importFromJSON(jsonData) {
+    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     try {
         const data = JSON.parse(jsonData);
         aquecimento = (data.aquecimento || []).map(ex => ({ name: ex.nome || ex.name, seconds: ex.segundos || ex.seconds }));
@@ -746,7 +752,7 @@ startBtn.onclick = startTreino;
 pauseBtn.onclick = pauseTreino;
 resetBtn.onclick = resetTreino;
 lockScreenBtn.onclick = () => { showLockScreen(); };
-importJsonBtn.onclick = () => { jsonFileInput.click(); };
+importJsonBtn.onclick = () => { if (!isTravaAtiva) jsonFileInput.click(); else statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; };
 jsonFileInput.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = ev => importFromJSON(ev.target.result); reader.readAsText(file); } };
 </script>
 </body>
