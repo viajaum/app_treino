@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-<title>Treino - Trava com Padrão</title>
+<title>Treino - Trava Total</title>
 <style>
 * {
     box-sizing: border-box;
@@ -107,15 +107,12 @@ button {
 button:active {
     transform: scale(0.96);
 }
-button:disabled {
-    opacity: 0.5;
-    transform: none;
-    cursor: not-allowed;
-}
 .btn-primary { background: #2563eb; }
 .btn-danger { background: #dc2626; }
 .btn-success { background: #10b981; }
 .btn-lock { background: #8b5cf6; }
+.btn-unlock { background: #ef4444; }
+
 .status {
     margin-top: 14px;
     text-align: center;
@@ -222,10 +219,6 @@ button:disabled {
     border-color: #60a5fa;
     transform: scale(1.05);
 }
-.pattern-dot.inner-circle {
-    background: #facc15;
-    border-color: #facc15;
-}
 .lock-message {
     text-align: center;
     margin-top: 30px;
@@ -237,6 +230,14 @@ button:disabled {
     background: #334155;
     margin-top: 20px;
     padding: 10px 24px;
+}
+
+/* Classe para desabilitar interação durante trava */
+body.locked-interface {
+    pointer-events: none;
+}
+body.locked-interface .lock-screen {
+    pointer-events: auto;
 }
 </style>
 </head>
@@ -275,21 +276,13 @@ button:disabled {
 <script>
 // ==============================
 // PADRÃO DE DESBLOQUEIO (3x3)
-// Padrão padrão: 1-2-3-6-9 (em formato de L invertido)
-// Índices: 0 1 2
-//           3 4 5
-//           6 7 8
-// Senha padrão = [0,1,2,5,8]  (canto superior esquerdo → canto inferior direito)
+// Padrão padrão: 1-2-3-6-9
 // ==============================
 const DEFAULT_PATTERN = [0, 1, 2, 5, 8];
-let currentPattern = [];
-let isLocked = false;   // tela está travada?
-let selectedPoints = []; // pontos selecionados durante desenho
+let selectedPoints = [];
+let isScreenLocked = false;
 
-// DOM elementos da trava
-let lockOverlay = null;
-
-// Áudio e demais variáveis
+// Áudio e variáveis do treino
 let aquecimento = [], treino = [], desaquecimento = [];
 let treinoRounds = 1, restBetweenRounds = 0, restAquecimentoToTreino = 5, restTreinoToDesaquecimento = 5;
 let fullWorkflow = [], currentStepIndex = 0, timeLeft = 0, timerInterval = null, isRunning = false;
@@ -316,20 +309,17 @@ const exerciseListContainer = document.getElementById('exerciseListContainer');
 
 // ========== FUNÇÕES DE TRAVA ==========
 function showLockScreen() {
-    if (isLocked) return;
-    isLocked = true;
+    if (isScreenLocked) return;
+    isScreenLocked = true;
     selectedPoints = [];
     
-    // Desabilitar botões principais
-    startBtn.disabled = true;
-    pauseBtn.disabled = true;
-    resetBtn.disabled = true;
-    importJsonBtn.disabled = true;
-    lockScreenBtn.disabled = true;
+    // Adicionar classe para desabilitar toda a interface
+    document.body.classList.add('locked-interface');
     
     // Criar overlay de trava
-    lockOverlay = document.createElement('div');
+    const lockOverlay = document.createElement('div');
     lockOverlay.className = 'lock-screen';
+    lockOverlay.id = 'lockOverlay';
     lockOverlay.innerHTML = `
         <div class="lock-header">
             <h2>🔒 TELA TRAVADA</h2>
@@ -356,17 +346,6 @@ function showLockScreen() {
                 checkPattern();
             }
         });
-        // efeito hover
-        dot.addEventListener('mouseenter', () => {
-            if (selectedPoints.length > 0 && !selectedPoints.includes(parseInt(dot.dataset.index))) {
-                dot.style.background = '#3b82f680';
-            }
-        });
-        dot.addEventListener('mouseleave', () => {
-            if (!selectedPoints.includes(parseInt(dot.dataset.index))) {
-                dot.style.background = '#1e293b';
-            }
-        });
         container.appendChild(dot);
     }
     
@@ -380,7 +359,7 @@ function showLockScreen() {
 function updatePatternDots() {
     const dots = document.querySelectorAll('.pattern-dot');
     dots.forEach((dot, idx) => {
-        dot.classList.remove('selected', 'inner-circle');
+        dot.classList.remove('selected');
         if (selectedPoints.includes(idx)) {
             dot.classList.add('selected');
         }
@@ -389,7 +368,6 @@ function updatePatternDots() {
 
 function checkPattern() {
     if (selectedPoints.length === DEFAULT_PATTERN.length) {
-        // Comparar arrays
         let isMatch = true;
         for (let i = 0; i < DEFAULT_PATTERN.length; i++) {
             if (selectedPoints[i] !== DEFAULT_PATTERN[i]) {
@@ -398,7 +376,6 @@ function checkPattern() {
             }
         }
         if (isMatch) {
-            // PADRÃO CORRETO
             document.getElementById('lockMessage').innerHTML = '<span style="color:#10b981;">✅ Padrão correto! Destravando...</span>';
             setTimeout(() => {
                 hideLockScreen();
@@ -416,23 +393,17 @@ function checkPattern() {
 }
 
 function hideLockScreen() {
-    if (lockOverlay) {
-        lockOverlay.remove();
-        lockOverlay = null;
-    }
-    isLocked = false;
-    startBtn.disabled = false;
-    pauseBtn.disabled = false;
-    resetBtn.disabled = false;
-    importJsonBtn.disabled = false;
-    lockScreenBtn.disabled = false;
+    const lockOverlay = document.getElementById('lockOverlay');
+    if (lockOverlay) lockOverlay.remove();
+    document.body.classList.remove('locked-interface');
+    isScreenLocked = false;
     statusMessage.innerHTML = '✅ Tela destravada!';
     setTimeout(() => {
         if (statusMessage.innerHTML === '✅ Tela destravada!') statusMessage.innerHTML = '📁 Pronto para treinar';
     }, 1500);
 }
 
-// ========== FUNÇÕES AUXILIARES ==========
+// ========== FUNÇÕES DO TREINO ==========
 function formatTime(seconds) {
     const mins = Math.floor(Math.abs(seconds) / 60);
     const secs = Math.abs(seconds) % 60;
@@ -736,12 +707,12 @@ function importFromJSON(jsonData) {
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// Eventos
+// ========== EVENTOS ==========
 startBtn.onclick = startTreino;
 pauseBtn.onclick = pauseTreino;
 resetBtn.onclick = resetTreino;
-lockScreenBtn.onclick = () => { if (!isLocked && !isRunning && treinoCarregado) showLockScreen(); else statusMessage.innerHTML = "⚠️ Finalize o treino antes de travar"; };
-importJsonBtn.onclick = () => { if (!isLocked && !isRunning) jsonFileInput.click(); else statusMessage.innerHTML = "⚠️ Destrave a tela primeiro"; };
+lockScreenBtn.onclick = () => { showLockScreen(); };
+importJsonBtn.onclick = () => { jsonFileInput.click(); };
 jsonFileInput.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = ev => importFromJSON(ev.target.result); reader.readAsText(file); } };
 </script>
 </body>
