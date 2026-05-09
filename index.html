@@ -2,377 +2,301 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Treino Profissional - Protegido</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+<title>Treino - Trava com Padrão</title>
 <style>
-
-*{
-    box-sizing:border-box;
-    font-family:system-ui;
+* {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    user-select: none;
 }
-
-body{
-    background:#0a0f1e;
-    color:white;
-    margin:0;
-    padding:20px;
-}
-
-.container{
-    max-width:900px;
-    margin:auto;
-}
-
-.card{
-    background:#141b2b;
-    border-radius:24px;
-    padding:20px;
-    margin-bottom:20px;
-}
-
-.timer-display{
-    font-size:72px;
-    text-align:center;
-    font-family:monospace;
-    font-weight:bold;
-    color:#facc15;
-    margin:20px 0;
-}
-
-.total-timer{
-    text-align:right;
-    font-size:16px;
-    color:#60a5fa;
-    margin-bottom:10px;
-    font-family:monospace;
-}
-
-.exercise-name{
-    text-align:center;
-    font-size:30px;
-    font-weight:bold;
-}
-
-.stage-category{
-    text-align:center;
-    font-size:14px;
-    color:#94a3b8;
-    margin-top:5px;
-}
-
-.round-info{
-    text-align:center;
-    font-size:14px;
-    color:#60a5fa;
-    margin-top:5px;
-}
-
-.next-exercise{
-    text-align:center;
-    font-size:16px;
-    color:#facc15;
-    margin-top:10px;
-    background:#1e293b;
-    display:inline-block;
-    padding:6px 16px;
-    border-radius:40px;
-    width:auto;
-    margin-left:auto;
-    margin-right:auto;
-}
-
-.progress{
-    height:14px;
-    background:#1e293b;
-    border-radius:999px;
-    overflow:hidden;
-    margin-top:20px;
-}
-
-.progress-fill{
-    height:100%;
-    width:100%;
-    background:#3b82f6;
-    transition:width 1s linear;
-}
-
-.controls{
-    display:flex;
-    gap:10px;
-    justify-content:center;
-    margin-top:20px;
-    flex-wrap:wrap;
-}
-
-button{
-    border:none;
-    border-radius:999px;
-    padding:12px 20px;
-    cursor:pointer;
-    color:white;
-    font-weight:bold;
-    transition:opacity 0.2s;
-}
-
-button:disabled{
-    opacity:0.4;
-    cursor:not-allowed;
-}
-
-.btn-primary{ background:#2563eb; }
-.btn-danger{ background:#dc2626; }
-.btn-success{ background:#10b981; }
-.btn-warning{ background:#f59e0b; }
-
-.lock-indicator{
-    display:none;
-    text-align:center;
-    background:#dc2626;
-    padding:10px;
-    border-radius:12px;
-    margin-bottom:15px;
-    font-weight:bold;
-}
-
-.lock-indicator.active{
-    display:block;
-}
-
-.status{
-    margin-top:15px;
-    text-align:center;
-    color:#94a3b8;
-}
-
-.countdown{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.9);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-direction:column;
-    z-index:9999;
-}
-
-.countdown-number{
-    font-size:140px;
-    font-weight:bold;
-    color:#facc15;
-}
-
-.countdown-text{
-    font-size:24px;
-}
-
-.import-json{
-    background:#0f172a;
-    border-radius:16px;
-    padding:15px;
-    margin-bottom:15px;
-    text-align:center;
-}
-
-.file-info{
-    margin-top:10px;
-    font-size:12px;
-    color:#94a3b8;
-}
-
-/* Lista de exercícios */
-.exercise-list-card{
-    background:#0f172a;
-    border-radius:16px;
-    padding:15px;
-    margin-top:15px;
-}
-
-.exercise-list-card h3{
-    margin:0 0 15px 0;
-    font-size:18px;
-    color:#60a5fa;
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-
-.exercise-list-container{
-    max-height:300px;
-    overflow-y:auto;
-}
-
-.exercise-list-item{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:10px 12px;
-    border-bottom:1px solid #1e293b;
-    font-size:14px;
-}
-
-.exercise-list-item.current{
-    background:#1e3a5f;
-    border-radius:12px;
-    border-left:4px solid #facc15;
-}
-
-.exercise-list-item .ex-name{
-    flex:2;
-    color:#e2e8f0;
-}
-
-.exercise-list-item .ex-time{
-    color:#facc15;
-    font-family:monospace;
-    font-weight:bold;
-}
-
-.exercise-list-item .ex-status{
-    width:24px;
-    text-align:center;
-}
-
-.exercise-list-item.completed{
-    opacity:0.5;
-    background:#0f1422;
-}
-
-.exercise-list-item.completed .ex-name{
-    text-decoration:line-through;
-}
-
-/* Diálogo de confirmação */
-.confirm-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #141b2b;
-    border-radius: 24px;
-    padding: 24px;
-    z-index: 2000;
-    text-align: center;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    border: 2px solid #facc15;
-    min-width: 250px;
-}
-.confirm-dialog p {
+body {
+    background: #0a0f1e;
     color: white;
-    margin-bottom: 20px;
-    font-size: 18px;
+    margin: 0;
+    padding: 16px;
+    min-height: 100vh;
 }
-.confirm-dialog button {
-    margin: 0 8px;
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+.card {
+    background: #141b2b;
+    border-radius: 1.5rem;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.timer-display {
+    font-size: 70px;
+    text-align: center;
+    font-family: monospace;
+    font-weight: bold;
+    color: #facc15;
+    margin: 15px 0;
+    letter-spacing: 4px;
+}
+.total-timer {
+    text-align: right;
+    font-size: 14px;
+    color: #60a5fa;
+    margin-bottom: 8px;
+    font-family: monospace;
+}
+.exercise-name {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+.stage-category {
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+.round-info {
+    text-align: center;
+    font-size: 13px;
+    color: #60a5fa;
+    margin-top: 5px;
+}
+.next-exercise {
+    text-align: center;
+    font-size: 14px;
+    color: #facc15;
+    margin-top: 10px;
+    background: #1e293b;
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 40px;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+}
+.progress {
+    height: 10px;
+    background: #1e293b;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 18px;
+}
+.progress-fill {
+    height: 100%;
+    background: #3b82f6;
+    transition: width 0.3s linear;
+}
+.controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+button {
+    border: none;
+    border-radius: 60px;
     padding: 10px 20px;
     cursor: pointer;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: transform 0.1s;
 }
-.dialog-overlay {
+button:active {
+    transform: scale(0.96);
+}
+button:disabled {
+    opacity: 0.5;
+    transform: none;
+    cursor: not-allowed;
+}
+.btn-primary { background: #2563eb; }
+.btn-danger { background: #dc2626; }
+.btn-success { background: #10b981; }
+.btn-lock { background: #8b5cf6; }
+.status {
+    margin-top: 14px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+.import-json {
+    background: #0f172a;
+    border-radius: 1rem;
+    padding: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.file-info {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #64748b;
+}
+.exercise-list-card {
+    background: #0f172a;
+    border-radius: 1rem;
+    padding: 12px;
+    margin-top: 15px;
+}
+.exercise-list-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #60a5fa;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.exercise-list-container {
+    max-height: 260px;
+    overflow-y: auto;
+}
+.exercise-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1e293b;
+    font-size: 13px;
+}
+.exercise-list-item.current {
+    background: #1e3a5f;
+    border-radius: 12px;
+    border-left: 3px solid #facc15;
+}
+.exercise-list-item .ex-name { flex: 2; color: #e2e8f0; }
+.exercise-list-item .ex-time { color: #facc15; font-family: monospace; font-weight: bold; }
+.exercise-list-item .ex-status { width: 24px; text-align: center; }
+.exercise-list-item.completed { opacity: 0.5; background: #0f1422; }
+.exercise-list-item.completed .ex-name { text-decoration: line-through; }
+
+/* TELA DE TRAVA COM PADRÃO */
+.lock-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 1999;
+    background: #0a0f1e;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
 }
-
+.lock-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.lock-header h2 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #facc15;
+}
+.lock-header p {
+    font-size: 14px;
+    color: #94a3b8;
+}
+.pattern-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 260px;
+    margin: 20px auto;
+}
+.pattern-dot {
+    aspect-ratio: 1;
+    background: #1e293b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: 2px solid #334155;
+}
+.pattern-dot.selected {
+    background: #3b82f6;
+    border-color: #60a5fa;
+    transform: scale(1.05);
+}
+.pattern-dot.inner-circle {
+    background: #facc15;
+    border-color: #facc15;
+}
+.lock-message {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 16px;
+    color: #ef4444;
+    min-height: 50px;
+}
+.reset-pattern {
+    background: #334155;
+    margin-top: 20px;
+    padding: 10px 24px;
+}
 </style>
 </head>
-
 <body>
 
 <div class="container">
+    <div class="card">
+        <div class="total-timer" id="totalTimerDisplay">⏱️ TOTAL: 00:00</div>
+        <div class="exercise-name" id="exerciseName">Carregue um treino</div>
+        <div class="stage-category" id="stageCategory"></div>
+        <div class="round-info" id="roundInfo"></div>
+        <div class="next-exercise" id="nextExercise"></div>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="controls">
+            <button class="btn-primary" id="startBtn">▶ INICIAR</button>
+            <button id="pauseBtn">⏸ PAUSAR</button>
+            <button class="btn-danger" id="resetBtn">⟳ RESETAR</button>
+            <button class="btn-lock" id="lockScreenBtn">🔒 TRAVAR TELA</button>
+        </div>
+        <div class="status" id="statusMessage">📁 Selecione um arquivo JSON</div>
+    </div>
 
-<div class="lock-indicator" id="lockIndicator">
-🔒 TREINO EM ANDAMENTO - APENAS PAUSAR FUNCIONA
-</div>
+    <div class="import-json">
+        <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
+        <button id="importJsonBtn" class="btn-primary">📂 SELECIONAR JSON</button>
+        <div class="file-info">Exemplo: { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }</div>
+    </div>
 
-<div class="card">
-
-<div class="total-timer" id="totalTimerDisplay">
-⏱️ TOTAL: 00:00
-</div>
-
-<div class="exercise-name" id="exerciseName">
-Carregue um treino
-</div>
-
-<div class="stage-category" id="stageCategory">
-</div>
-
-<div class="round-info" id="roundInfo">
-</div>
-
-<div class="next-exercise" id="nextExercise">
-</div>
-
-<div class="timer-display" id="timerDisplay">
-00:00
-</div>
-
-<div class="progress">
-<div class="progress-fill" id="progressFill"></div>
-</div>
-
-<div class="controls">
-<button class="btn-primary" id="startBtn">▶ INICIAR</button>
-<button id="pauseBtn">⏸ PAUSAR</button>
-<button class="btn-danger" id="resetBtn">⟳ RESETAR</button>
-</div>
-
-<div class="status" id="statusMessage">
-📁 Selecione um arquivo JSON para começar
-</div>
-
-</div>
-
-<div class="import-json">
-<div style="font-size:18px; font-weight:bold; margin-bottom:15px;">📁 CARREGAR TREINO</div>
-<input type="file" id="jsonFileInput" accept=".json" style="display:none;">
-<button id="importJsonBtn" class="btn-primary" style="font-size:18px; padding:15px 30px;">📂 SELECIONAR ARQUIVO JSON</button>
-<div class="file-info">
-Exemplo: treino.json com { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }
-</div>
-</div>
-
-<!-- Lista de exercícios -->
-<div class="exercise-list-card" id="exerciseListCard" style="display:none;">
-<h3>📋 LISTA DE EXERCÍCIOS</h3>
-<div class="exercise-list-container" id="exerciseListContainer"></div>
-</div>
-
+    <div class="exercise-list-card" id="exerciseListCard" style="display:none;">
+        <h3>📋 EXERCÍCIOS</h3>
+        <div class="exercise-list-container" id="exerciseListContainer"></div>
+    </div>
 </div>
 
 <script>
+// ==============================
+// PADRÃO DE DESBLOQUEIO (3x3)
+// Padrão padrão: 1-2-3-6-9 (em formato de L invertido)
+// Índices: 0 1 2
+//           3 4 5
+//           6 7 8
+// Senha padrão = [0,1,2,5,8]  (canto superior esquerdo → canto inferior direito)
+// ==============================
+const DEFAULT_PATTERN = [0, 1, 2, 5, 8];
+let currentPattern = [];
+let isLocked = false;   // tela está travada?
+let selectedPoints = []; // pontos selecionados durante desenho
 
-// ======================================
-// DADOS
-// ======================================
+// DOM elementos da trava
+let lockOverlay = null;
 
-let aquecimento = [];
-let treino = [];
-let desaquecimento = [];
+// Áudio e demais variáveis
+let aquecimento = [], treino = [], desaquecimento = [];
+let treinoRounds = 1, restBetweenRounds = 0, restAquecimentoToTreino = 5, restTreinoToDesaquecimento = 5;
+let fullWorkflow = [], currentStepIndex = 0, timeLeft = 0, timerInterval = null, isRunning = false;
+let totalTimeSeconds = 0, totalTimeLeft = 0, hasAnnouncedNext = false, treinoCarregado = false;
+let audioActivated = false;
 
-let treinoRounds = 1;
-let restBetweenRounds = 0;
-let restAquecimentoToTreino = 5;
-let restTreinoToDesaquecimento = 5;
-
-let fullWorkflow = [];
-let currentStepIndex = 0;
-let timeLeft = 0;
-let timerInterval = null;
-let isRunning = false;
-let totalTimeSeconds = 0;
-let totalTimeLeft = 0;
-let hasAnnouncedNext = false;
-let treinoCarregado = false;
-
-// ======================================
 // DOM
-// ======================================
-
 const timerDisplay = document.getElementById('timerDisplay');
 const totalTimerDisplay = document.getElementById('totalTimerDisplay');
 const exerciseName = document.getElementById('exerciseName');
@@ -381,64 +305,150 @@ const roundInfo = document.getElementById('roundInfo');
 const nextExerciseSpan = document.getElementById('nextExercise');
 const progressFill = document.getElementById('progressFill');
 const statusMessage = document.getElementById('statusMessage');
-const lockIndicator = document.getElementById('lockIndicator');
-const exerciseListCard = document.getElementById('exerciseListCard');
-const exerciseListContainer = document.getElementById('exerciseListContainer');
-
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
+const lockScreenBtn = document.getElementById('lockScreenBtn');
 const importJsonBtn = document.getElementById('importJsonBtn');
 const jsonFileInput = document.getElementById('jsonFileInput');
+const exerciseListCard = document.getElementById('exerciseListCard');
+const exerciseListContainer = document.getElementById('exerciseListContainer');
 
-// ======================================
-// DIÁLOGO DE CONFIRMAÇÃO
-// ======================================
-
-function showConfirm(message, onConfirm) {
-    const overlay = document.createElement('div');
-    overlay.className = 'dialog-overlay';
+// ========== FUNÇÕES DE TRAVA ==========
+function showLockScreen() {
+    if (isLocked) return;
+    isLocked = true;
+    selectedPoints = [];
     
-    const dialog = document.createElement('div');
-    dialog.className = 'confirm-dialog';
-    dialog.innerHTML = `
-        <p>${message}</p>
-        <button id="confirmYes" class="btn-primary">SIM</button>
-        <button id="confirmNo" class="btn-danger">NÃO</button>
+    // Desabilitar botões principais
+    startBtn.disabled = true;
+    pauseBtn.disabled = true;
+    resetBtn.disabled = true;
+    importJsonBtn.disabled = true;
+    lockScreenBtn.disabled = true;
+    
+    // Criar overlay de trava
+    lockOverlay = document.createElement('div');
+    lockOverlay.className = 'lock-screen';
+    lockOverlay.innerHTML = `
+        <div class="lock-header">
+            <h2>🔒 TELA TRAVADA</h2>
+            <p>Desenhe o padrão para destravar</p>
+        </div>
+        <div class="pattern-container" id="patternContainer"></div>
+        <div class="lock-message" id="lockMessage"></div>
+        <button class="reset-pattern" id="resetPatternBtn">LIMPAR PADRÃO</button>
     `;
+    document.body.appendChild(lockOverlay);
     
-    document.body.appendChild(overlay);
-    document.body.appendChild(dialog);
+    // Criar pontos do padrão 3x3
+    const container = document.getElementById('patternContainer');
+    for (let i = 0; i < 9; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'pattern-dot';
+        dot.dataset.index = i;
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(dot.dataset.index);
+            if (!selectedPoints.includes(idx)) {
+                selectedPoints.push(idx);
+                updatePatternDots();
+                checkPattern();
+            }
+        });
+        // efeito hover
+        dot.addEventListener('mouseenter', () => {
+            if (selectedPoints.length > 0 && !selectedPoints.includes(parseInt(dot.dataset.index))) {
+                dot.style.background = '#3b82f680';
+            }
+        });
+        dot.addEventListener('mouseleave', () => {
+            if (!selectedPoints.includes(parseInt(dot.dataset.index))) {
+                dot.style.background = '#1e293b';
+            }
+        });
+        container.appendChild(dot);
+    }
     
-    document.getElementById('confirmYes').onclick = () => {
-        overlay.remove();
-        dialog.remove();
-        onConfirm();
-    };
-    
-    document.getElementById('confirmNo').onclick = () => {
-        overlay.remove();
-        dialog.remove();
-    };
+    document.getElementById('resetPatternBtn').addEventListener('click', () => {
+        selectedPoints = [];
+        updatePatternDots();
+        document.getElementById('lockMessage').innerHTML = '';
+    });
 }
 
-// ======================================
-// ÁUDIO
-// ======================================
-
-let audioActivated = false;
-
-function activateAudio(){
-    if(audioActivated) return;
-    audioActivated = true;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    ctx.resume();
-    statusMessage.innerHTML = '🔊 áudio ativado';
+function updatePatternDots() {
+    const dots = document.querySelectorAll('.pattern-dot');
+    dots.forEach((dot, idx) => {
+        dot.classList.remove('selected', 'inner-circle');
+        if (selectedPoints.includes(idx)) {
+            dot.classList.add('selected');
+        }
+    });
 }
-document.body.addEventListener('click', activateAudio, { once: true });
 
-function speak(text){
-    if(!audioActivated || !text) return;
+function checkPattern() {
+    if (selectedPoints.length === DEFAULT_PATTERN.length) {
+        // Comparar arrays
+        let isMatch = true;
+        for (let i = 0; i < DEFAULT_PATTERN.length; i++) {
+            if (selectedPoints[i] !== DEFAULT_PATTERN[i]) {
+                isMatch = false;
+                break;
+            }
+        }
+        if (isMatch) {
+            // PADRÃO CORRETO
+            document.getElementById('lockMessage').innerHTML = '<span style="color:#10b981;">✅ Padrão correto! Destravando...</span>';
+            setTimeout(() => {
+                hideLockScreen();
+            }, 500);
+        } else {
+            document.getElementById('lockMessage').innerHTML = '<span style="color:#ef4444;">❌ Padrão incorreto! Tente novamente.</span>';
+            selectedPoints = [];
+            updatePatternDots();
+        }
+    } else if (selectedPoints.length > DEFAULT_PATTERN.length) {
+        document.getElementById('lockMessage').innerHTML = '<span style="color:#ef4444;">❌ Padrão incorreto! Tente novamente.</span>';
+        selectedPoints = [];
+        updatePatternDots();
+    }
+}
+
+function hideLockScreen() {
+    if (lockOverlay) {
+        lockOverlay.remove();
+        lockOverlay = null;
+    }
+    isLocked = false;
+    startBtn.disabled = false;
+    pauseBtn.disabled = false;
+    resetBtn.disabled = false;
+    importJsonBtn.disabled = false;
+    lockScreenBtn.disabled = false;
+    statusMessage.innerHTML = '✅ Tela destravada!';
+    setTimeout(() => {
+        if (statusMessage.innerHTML === '✅ Tela destravada!') statusMessage.innerHTML = '📁 Pronto para treinar';
+    }, 1500);
+}
+
+// ========== FUNÇÕES AUXILIARES ==========
+function formatTime(seconds) {
+    const mins = Math.floor(Math.abs(seconds) / 60);
+    const secs = Math.abs(seconds) % 60;
+    return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+function formatTimeToText(seconds) {
+    if (seconds < 60) return `${seconds} segundos`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (secs === 0) return mins === 1 ? `${mins} minuto` : `${mins} minutos`;
+    return `${mins} minuto${mins > 1 ? 's' : ''} e ${secs} segundo${secs > 1 ? 's' : ''}`;
+}
+
+function speak(text) {
+    if (!audioActivated || !text) return;
     try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -448,8 +458,8 @@ function speak(text){
     } catch(e) { }
 }
 
-function beep(freq=900, duration=.15){
-    if(!audioActivated) return;
+function beep(freq=900, duration=.15) {
+    if (!audioActivated) return;
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -464,126 +474,69 @@ function beep(freq=900, duration=.15){
     } catch(e) { }
 }
 
-// ======================================
-// FUNÇÕES AUXILIARES
-// ======================================
-
-function formatTime(seconds){
-    const mins = Math.floor(Math.abs(seconds) / 60);
-    const secs = Math.abs(seconds) % 60;
-    return `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+function activateAudio() {
+    if (audioActivated) return;
+    audioActivated = true;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume();
 }
+document.body.addEventListener('click', activateAudio, { once: true });
 
-function formatTimeToText(seconds){
-    if(seconds < 60) return `${seconds} segundos`;
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if(secs === 0) return mins === 1 ? `${mins} minuto` : `${mins} minutos`;
-    return `${mins} minuto${mins > 1 ? 's' : ''} e ${secs} segundo${secs > 1 ? 's' : ''}`;
-}
-
-function stopTimer(){
-    if(timerInterval){
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
     isRunning = false;
 }
 
-function setLockedMode(locked){
-    if(locked && isRunning){
-        lockIndicator.classList.add('active');
-        startBtn.disabled = true;
-        resetBtn.disabled = true;
-        importJsonBtn.disabled = true;
-        statusMessage.innerHTML = '🔒 Treino rodando - apenas PAUSAR funciona';
-    }else{
-        lockIndicator.classList.remove('active');
-        startBtn.disabled = false;
-        resetBtn.disabled = false;
-        importJsonBtn.disabled = false;
-        statusMessage.innerHTML = '✏️ Edição liberada';
-    }
-}
-
-function updateUINextExercise(){
-    if(currentStepIndex + 1 < fullWorkflow.length){
+function updateUINextExercise() {
+    if (currentStepIndex + 1 < fullWorkflow.length) {
         const nextStep = fullWorkflow[currentStepIndex + 1];
         const timeText = formatTimeToText(nextStep.seconds);
-        if(nextStep.type === 'rest'){
+        if (nextStep.type === 'rest') {
             nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO, ${timeText}`;
-        }else{
+        } else {
             nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name}, ${timeText}`;
-            if(nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (rodada ${nextStep.round})`;
+            if (nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (rodada ${nextStep.round})`;
         }
-    }else{
+    } else {
         nextExerciseSpan.textContent = `⏩ Último!`;
     }
 }
 
-// ======================================
-// RENDERIZAR LISTA DE EXERCÍCIOS
-// ======================================
-
-function renderExerciseList(){
-    if(!fullWorkflow.length){
-        exerciseListCard.style.display = 'none';
-        return;
-    }
-    
+function renderExerciseList() {
+    if (!fullWorkflow.length) { exerciseListCard.style.display = 'none'; return; }
     exerciseListCard.style.display = 'block';
     exerciseListContainer.innerHTML = '';
-    
     fullWorkflow.forEach((step, index) => {
         const item = document.createElement('div');
         item.className = 'exercise-list-item';
-        
-        if(index === currentStepIndex){
-            item.classList.add('current');
-        }
-        
-        if(index < currentStepIndex){
-            item.classList.add('completed');
-        }
-        
+        if (index === currentStepIndex) item.classList.add('current');
+        if (index < currentStepIndex) item.classList.add('completed');
         const statusSpan = document.createElement('span');
         statusSpan.className = 'ex-status';
-        if(index < currentStepIndex){
-            statusSpan.textContent = '✅';
-        }else if(index === currentStepIndex){
-            statusSpan.textContent = '▶';
-        }else{
-            statusSpan.textContent = '○';
-        }
-        
+        if (index < currentStepIndex) statusSpan.textContent = '✅';
+        else if (index === currentStepIndex) statusSpan.textContent = '▶';
+        else statusSpan.textContent = '○';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'ex-name';
         let displayName = step.name;
-        if(step.etapa === 'treino' && step.round){
-            displayName = `[${step.round}] ${step.name}`;
-        }else if(step.etapa === 'aquecimento'){
-            displayName = `🔥 ${step.name}`;
-        }else if(step.etapa === 'desaquecimento'){
-            displayName = `🧘 ${step.name}`;
-        }else if(step.type === 'rest'){
-            displayName = `⏸️ ${step.name}`;
-        }
+        if (step.etapa === 'treino' && step.round) displayName = `[${step.round}] ${step.name}`;
+        else if (step.etapa === 'aquecimento') displayName = `🔥 ${step.name}`;
+        else if (step.etapa === 'desaquecimento') displayName = `🧘 ${step.name}`;
+        else if (step.type === 'rest') displayName = `⏸️ ${step.name}`;
         nameSpan.textContent = displayName;
-        
         const timeSpan = document.createElement('span');
         timeSpan.className = 'ex-time';
         timeSpan.textContent = formatTime(step.seconds);
-        
         item.appendChild(statusSpan);
         item.appendChild(nameSpan);
         item.appendChild(timeSpan);
-        
         exerciseListContainer.appendChild(item);
     });
 }
 
-function updateUI(){
-    if(!fullWorkflow.length || currentStepIndex >= fullWorkflow.length){
+function updateUI() {
+    if (!fullWorkflow.length || currentStepIndex >= fullWorkflow.length) {
         timerDisplay.textContent = formatTime(0);
         exerciseName.textContent = treinoCarregado ? "🏆 FIM!" : "Carregue um treino";
         stageCategory.textContent = "";
@@ -599,361 +552,197 @@ function updateUI(){
     progressFill.style.width = `${(timeLeft / totalTime) * 100}%`;
     exerciseName.textContent = step.name;
     totalTimerDisplay.textContent = `⏱️ TOTAL: ${formatTime(totalTimeLeft)}`;
-    
     updateUINextExercise();
     renderExerciseList();
-    
-    if(step.etapa === 'aquecimento'){
+    if (step.etapa === 'aquecimento') {
         stageCategory.textContent = '🔥 AQUECIMENTO';
         roundInfo.textContent = '';
-    }else if(step.etapa === 'treino'){
+    } else if (step.etapa === 'treino') {
         stageCategory.textContent = '💪 TREINO';
         roundInfo.textContent = `Rodada ${step.round}/${treinoRounds}`;
-    }else if(step.etapa === 'desaquecimento'){
+    } else if (step.etapa === 'desaquecimento') {
         stageCategory.textContent = '🧘 DESAQUECIMENTO';
         roundInfo.textContent = '';
-    }else if(step.type === 'rest'){
+    } else if (step.type === 'rest') {
         stageCategory.textContent = '⏸️ DESCANSO';
         roundInfo.textContent = '';
     }
 }
 
-function announceNextIfNeeded(){
-    if(timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext){
+function announceNextIfNeeded() {
+    if (timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext) {
         hasAnnouncedNext = true;
         const nextStep = fullWorkflow[currentStepIndex + 1];
-        if(nextStep){
+        if (nextStep) {
             const timeText = formatTimeToText(nextStep.seconds);
             let msg = '';
-            if(nextStep.type === 'rest'){
-                msg = `Próximo: descanso, ${timeText}`;
-            }else{
-                msg = `Próximo: ${nextStep.name}, ${timeText}`;
-            }
+            if (nextStep.type === 'rest') msg = `Próximo: descanso, ${timeText}`;
+            else msg = `Próximo: ${nextStep.name}, ${timeText}`;
             speak(msg);
             statusMessage.innerHTML = `🔊 ${msg}`;
         }
     }
 }
 
-function showCountdown(callback){
+function showCountdown(callback) {
     const overlay = document.createElement('div');
     overlay.className = 'countdown';
-    const number = document.createElement('div');
-    number.className = 'countdown-number';
-    const text = document.createElement('div');
-    text.className = 'countdown-text';
-    overlay.appendChild(number);
-    overlay.appendChild(text);
+    overlay.innerHTML = `<div class="countdown-number">3</div><div class="countdown-text"></div>`;
     document.body.appendChild(overlay);
     let count = 3;
-    function update(){
-        number.textContent = count;
-        if(count > 0){
-            beep();
-        }else{
-            number.textContent = 'VAI!';
-            beep(1200, .4);
-        }
+    function update() {
+        const numberDiv = overlay.querySelector('.countdown-number');
+        numberDiv.textContent = count;
+        if (count > 0) { beep(); }
+        else { numberDiv.textContent = 'VAI!'; beep(1200, 0.4); }
     }
     update();
-    const interval = setInterval(()=>{
+    const interval = setInterval(() => {
         count--;
-        if(count >= 0){
-            update();
-        }else{
+        if (count >= 0) update();
+        else {
             clearInterval(interval);
             overlay.remove();
             callback();
         }
-    },1000);
+    }, 1000);
 }
 
-// ======================================
-// GERAR WORKFLOW
-// ======================================
-
-function generateWorkflow(){
-    const workflow = [];
-    
-    for(let i=0; i<aquecimento.length; i++){
-        workflow.push({
-            type: 'exercise',
-            etapa: 'aquecimento',
-            name: aquecimento[i].name,
-            seconds: aquecimento[i].seconds,
-            round: null,
-            idx: i
-        });
-    }
-    
-    if(aquecimento.length > 0 && restAquecimentoToTreino > 0){
-        workflow.push({
-            type: 'rest',
-            etapa: 'transicao',
-            name: '⏸️ Transição',
-            seconds: restAquecimentoToTreino
-        });
-    }
-    
-    for(let round=1; round<=treinoRounds; round++){
-        for(let i=0; i<treino.length; i++){
-            workflow.push({
-                type: 'exercise',
-                etapa: 'treino',
-                name: treino[i].name,
-                seconds: treino[i].seconds,
-                round: round,
-                idx: i
-            });
-        }
-        if(round < treinoRounds && restBetweenRounds > 0){
-            workflow.push({
-                type: 'rest',
-                etapa: 'descanso_entre_series',
-                name: '⏸️ Descanso',
-                seconds: restBetweenRounds,
-                round: round
-            });
-        }
-    }
-    
-    if(treino.length > 0 && restTreinoToDesaquecimento > 0){
-        workflow.push({
-            type: 'rest',
-            etapa: 'transicao',
-            name: '⏸️ Transição',
-            seconds: restTreinoToDesaquecimento
-        });
-    }
-    
-    for(let i=0; i<desaquecimento.length; i++){
-        workflow.push({
-            type: 'exercise',
-            etapa: 'desaquecimento',
-            name: desaquecimento[i].name,
-            seconds: desaquecimento[i].seconds,
-            round: null,
-            idx: i
-        });
-    }
-    
-    return workflow;
-}
-
-function rebuildWorkflow(){
-    fullWorkflow = generateWorkflow();
-    totalTimeSeconds = fullWorkflow.reduce((sum, step) => sum + step.seconds, 0);
-    totalTimeLeft = totalTimeSeconds;
-    if(currentStepIndex >= fullWorkflow.length){
-        currentStepIndex = fullWorkflow.length;
-    }
-    if(fullWorkflow.length > 0 && currentStepIndex < fullWorkflow.length && timeLeft === 0){
-        timeLeft = fullWorkflow[currentStepIndex].seconds;
-    }
-    updateUI();
-}
-
-// ======================================
-// TIMER PRINCIPAL
-// ======================================
-
-function startActualTimer(){
-    if(timerInterval) stopTimer();
-    if(currentStepIndex >= fullWorkflow.length) return;
-    
-    const step = fullWorkflow[currentStepIndex];
-    timeLeft = step.seconds;
+function startActualTimer() {
+    if (timerInterval) stopTimer();
+    if (currentStepIndex >= fullWorkflow.length) return;
+    timeLeft = fullWorkflow[currentStepIndex].seconds;
     hasAnnouncedNext = false;
     updateUI();
     isRunning = true;
-    setLockedMode(true);
-    
     timerInterval = setInterval(() => {
-        if(!isRunning) return;
-        
-        if(timeLeft > 0){
+        if (!isRunning) return;
+        if (timeLeft > 0) {
             timeLeft--;
             totalTimeLeft--;
             updateUI();
-            
-            if(timeLeft === 10){
-                announceNextIfNeeded();
-            }
-            
-            if(timeLeft === 3) beep();
-            if(timeLeft === 2) beep();
-            if(timeLeft === 1) beep();
+            if (timeLeft === 10) announceNextIfNeeded();
+            if (timeLeft === 3) beep();
+            if (timeLeft === 2) beep();
+            if (timeLeft === 1) beep();
         }
-        
-        if(timeLeft === 0 && currentStepIndex < fullWorkflow.length){
+        if (timeLeft === 0 && currentStepIndex < fullWorkflow.length) {
             stopTimer();
             isRunning = false;
-            
-            if(currentStepIndex + 1 < fullWorkflow.length){
+            if (currentStepIndex + 1 < fullWorkflow.length) {
                 currentStepIndex++;
                 startActualTimer();
-            }else{
+            } else {
                 currentStepIndex++;
                 updateUI();
                 speak("Treino finalizado!");
                 statusMessage.innerHTML = "🏆 TREINO FINALIZADO!";
                 beep(1200, 0.5);
-                setLockedMode(false);
             }
         }
     }, 1000);
 }
 
-function startFirstExercise(){
-    if(currentStepIndex >= fullWorkflow.length) return;
+function startFirstExercise() {
+    if (currentStepIndex >= fullWorkflow.length) return;
     updateUI();
-    showCountdown(() => {
-        startActualTimer();
-    });
+    showCountdown(() => { startActualTimer(); });
 }
 
-function startTreino(){
-    if(!treinoCarregado){
-        statusMessage.innerHTML = "❌ Carregue um arquivo JSON primeiro!";
-        return;
-    }
-    if(currentStepIndex >= fullWorkflow.length) resetTreino();
-    if(!isRunning && currentStepIndex < fullWorkflow.length){
-        startFirstExercise();
-    }
+function startTreino() {
+    if (!treinoCarregado) { statusMessage.innerHTML = "❌ Carregue um JSON primeiro!"; return; }
+    if (currentStepIndex >= fullWorkflow.length) resetTreino();
+    if (!isRunning && currentStepIndex < fullWorkflow.length) startFirstExercise();
 }
 
-function pauseTreino(){
-    if(!isRunning) return;
-    showConfirm("PAUSAR O TREINO?", () => {
+function pauseTreino() {
+    if (!isRunning) return;
+    if (confirm("PAUSAR O TREINO?")) {
         stopTimer();
-        setLockedMode(false);
         window.speechSynthesis.cancel();
-        statusMessage.innerHTML = "⏸ Treino pausado";
+        statusMessage.innerHTML = "⏸ Pausado";
         speak("Treino pausado");
-    });
+    }
 }
 
-function resetTreino(){
-    if(!treinoCarregado) return;
-    if(isRunning){
-        showConfirm("RESETAR O TREINO?", () => {
+function resetTreino() {
+    if (!treinoCarregado) return;
+    if (isRunning) {
+        if (confirm("RESETAR O TREINO?")) {
             stopTimer();
             isRunning = false;
-            setLockedMode(false);
             currentStepIndex = 0;
             hasAnnouncedNext = false;
-            if(fullWorkflow.length > 0){
-                timeLeft = fullWorkflow[0].seconds;
-            }
+            if (fullWorkflow.length) timeLeft = fullWorkflow[0].seconds;
             totalTimeLeft = totalTimeSeconds;
             updateUI();
-            statusMessage.innerHTML = "🔄 Treino resetado";
+            statusMessage.innerHTML = "🔄 Resetado";
             speak("Treino resetado");
-        });
-    }else{
+        }
+    } else {
         stopTimer();
         isRunning = false;
-        setLockedMode(false);
         currentStepIndex = 0;
         hasAnnouncedNext = false;
-        if(fullWorkflow.length > 0){
-            timeLeft = fullWorkflow[0].seconds;
-        }
+        if (fullWorkflow.length) timeLeft = fullWorkflow[0].seconds;
         totalTimeLeft = totalTimeSeconds;
         updateUI();
-        statusMessage.innerHTML = "🔄 Treino resetado";
+        statusMessage.innerHTML = "🔄 Resetado";
     }
 }
 
-// ======================================
-// IMPORTAÇÃO JSON
-// ======================================
+function generateWorkflow() {
+    const workflow = [];
+    for (let i=0; i<aquecimento.length; i++) workflow.push({ type: 'exercise', etapa: 'aquecimento', name: aquecimento[i].name, seconds: aquecimento[i].seconds, round: null, idx: i });
+    if (aquecimento.length && restAquecimentoToTreino) workflow.push({ type: 'rest', etapa: 'transicao', name: '⏸️ Transição', seconds: restAquecimentoToTreino });
+    for (let round=1; round<=treinoRounds; round++) {
+        for (let i=0; i<treino.length; i++) workflow.push({ type: 'exercise', etapa: 'treino', name: treino[i].name, seconds: treino[i].seconds, round: round, idx: i });
+        if (round < treinoRounds && restBetweenRounds) workflow.push({ type: 'rest', etapa: 'descanso_entre_series', name: '⏸️ Descanso', seconds: restBetweenRounds, round: round });
+    }
+    if (treino.length && restTreinoToDesaquecimento) workflow.push({ type: 'rest', etapa: 'transicao', name: '⏸️ Transição', seconds: restTreinoToDesaquecimento });
+    for (let i=0; i<desaquecimento.length; i++) workflow.push({ type: 'exercise', etapa: 'desaquecimento', name: desaquecimento[i].name, seconds: desaquecimento[i].seconds, round: null, idx: i });
+    return workflow;
+}
 
-function importFromJSON(jsonData){
+function rebuildWorkflow() {
+    fullWorkflow = generateWorkflow();
+    totalTimeSeconds = fullWorkflow.reduce((s, step) => s + step.seconds, 0);
+    totalTimeLeft = totalTimeSeconds;
+    if (currentStepIndex >= fullWorkflow.length) currentStepIndex = fullWorkflow.length;
+    if (fullWorkflow.length && currentStepIndex < fullWorkflow.length && !timeLeft) timeLeft = fullWorkflow[currentStepIndex].seconds;
+    updateUI();
+}
+
+function importFromJSON(jsonData) {
     try {
         const data = JSON.parse(jsonData);
-        
-        aquecimento = [];
-        treino = [];
-        desaquecimento = [];
-        
-        if(data.aquecimento) aquecimento = data.aquecimento.map(ex => ({
-            name: ex.nome || ex.name,
-            seconds: ex.segundos || ex.seconds
-        }));
-        
-        if(data.treino) treino = data.treino.map(ex => ({
-            name: ex.nome || ex.name,
-            seconds: ex.segundos || ex.seconds
-        }));
-        
-        if(data.desaquecimento) desaquecimento = data.desaquecimento.map(ex => ({
-            name: ex.nome || ex.name,
-            seconds: ex.segundos || ex.seconds
-        }));
-        
-        if(data.config){
-            if(data.config.rodadas) treinoRounds = data.config.rodadas;
-            if(data.config.descanso_entre_rodadas) restBetweenRounds = data.config.descanso_entre_rodadas;
-            if(data.config.transicao_aquecimento_treino) restAquecimentoToTreino = data.config.transicao_aquecimento_treino;
-            if(data.config.transicao_treino_desaquecimento) restTreinoToDesaquecimento = data.config.transicao_treino_desaquecimento;
+        aquecimento = (data.aquecimento || []).map(ex => ({ name: ex.nome || ex.name, seconds: ex.segundos || ex.seconds }));
+        treino = (data.treino || []).map(ex => ({ name: ex.nome || ex.name, seconds: ex.segundos || ex.seconds }));
+        desaquecimento = (data.desaquecimento || []).map(ex => ({ name: ex.nome || ex.name, seconds: ex.segundos || ex.seconds }));
+        if (data.config) {
+            treinoRounds = data.config.rodadas || 1;
+            restBetweenRounds = data.config.descanso_entre_rodadas || 0;
+            restAquecimentoToTreino = data.config.transicao_aquecimento_treino || 5;
+            restTreinoToDesaquecimento = data.config.transicao_treino_desaquecimento || 5;
         }
-        
         treinoCarregado = true;
         rebuildWorkflow();
-        
-        if(fullWorkflow.length > 0){
-            currentStepIndex = 0;
-            timeLeft = fullWorkflow[0].seconds;
-        }
+        currentStepIndex = 0;
+        if (fullWorkflow.length) timeLeft = fullWorkflow[0].seconds;
         totalTimeLeft = totalTimeSeconds;
         updateUI();
-        
-        let nomeTreino = data.nome || "Treino";
-        statusMessage.innerHTML = `✅ "${nomeTreino}" carregado! ${fullWorkflow.length} blocos. Clique INICIAR.`;
-        speak(`${nomeTreino} carregado`);
-        
-    } catch(e) {
-        alert("Erro ao importar JSON: " + e.message);
-    }
+        statusMessage.innerHTML = `✅ "${data.nome || 'Treino'}" carregado! Clique INICIAR.`;
+        speak("Treino carregado");
+    } catch(e) { alert("Erro: " + e.message); }
 }
 
-// ======================================
-// EVENTOS
-// ======================================
-
-importJsonBtn.onclick = () => {
-    if(isRunning){
-        statusMessage.innerHTML = "⏸ Pause o treino antes de carregar outro arquivo!";
-        return;
-    }
-    jsonFileInput.click();
-};
-
-jsonFileInput.onchange = (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        importFromJSON(event.target.result);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-};
-
+// Eventos
 startBtn.onclick = startTreino;
 pauseBtn.onclick = pauseTreino;
 resetBtn.onclick = resetTreino;
-
-// ======================================
-// INIT
-// ======================================
-
-updateUI();
-
+lockScreenBtn.onclick = () => { if (!isLocked && !isRunning && treinoCarregado) showLockScreen(); else statusMessage.innerHTML = "⚠️ Finalize o treino antes de travar"; };
+importJsonBtn.onclick = () => { if (!isLocked && !isRunning) jsonFileInput.click(); else statusMessage.innerHTML = "⚠️ Destrave a tela primeiro"; };
+jsonFileInput.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = ev => importFromJSON(ev.target.result); reader.readAsText(file); } };
 </script>
-
 </body>
 </html>
