@@ -111,7 +111,6 @@ button:active {
 .btn-danger { background: #dc2626; }
 .btn-success { background: #10b981; }
 .btn-lock { background: #8b5cf6; }
-.btn-unlock { background: #ef4444; }
 
 .status {
     margin-top: 14px;
@@ -232,12 +231,10 @@ button:active {
     padding: 10px 24px;
 }
 
-/* Classe para desabilitar interação durante trava */
-body.locked-interface {
-    pointer-events: none;
-}
-body.locked-interface .lock-screen {
-    pointer-events: auto;
+/* Desabilitar todos os botões durante trava */
+.btn-disabled, button:disabled {
+    opacity: 0.5;
+    pointer-events: none !important;
 }
 </style>
 </head>
@@ -308,13 +305,45 @@ const exerciseListCard = document.getElementById('exerciseListCard');
 const exerciseListContainer = document.getElementById('exerciseListContainer');
 
 // ========== FUNÇÕES DE TRAVA ==========
+function disableAllButtons() {
+    // Desabilita todos os botões da interface
+    startBtn.disabled = true;
+    pauseBtn.disabled = true;
+    resetBtn.disabled = true;
+    importJsonBtn.disabled = true;
+    lockScreenBtn.disabled = true;
+    
+    // Adiciona classe para desabilitar CSS também
+    startBtn.classList.add('btn-disabled');
+    pauseBtn.classList.add('btn-disabled');
+    resetBtn.classList.add('btn-disabled');
+    importJsonBtn.classList.add('btn-disabled');
+    lockScreenBtn.classList.add('btn-disabled');
+}
+
+function enableAllButtons() {
+    // Habilita todos os botões
+    startBtn.disabled = false;
+    pauseBtn.disabled = false;
+    resetBtn.disabled = false;
+    importJsonBtn.disabled = false;
+    lockScreenBtn.disabled = false;
+    
+    // Remove classe de desabilitação
+    startBtn.classList.remove('btn-disabled');
+    pauseBtn.classList.remove('btn-disabled');
+    resetBtn.classList.remove('btn-disabled');
+    importJsonBtn.classList.remove('btn-disabled');
+    lockScreenBtn.classList.remove('btn-disabled');
+}
+
 function showLockScreen() {
     if (isScreenLocked) return;
     isScreenLocked = true;
     selectedPoints = [];
     
-    // Adicionar classe para desabilitar toda a interface
-    document.body.classList.add('locked-interface');
+    // Desabilita todos os botões
+    disableAllButtons();
     
     // Criar overlay de trava
     const lockOverlay = document.createElement('div');
@@ -339,6 +368,8 @@ function showLockScreen() {
         dot.dataset.index = i;
         dot.addEventListener('click', (e) => {
             e.stopPropagation();
+            // Só permite clicar se não estiver travado
+            if (!isScreenLocked) return;
             const idx = parseInt(dot.dataset.index);
             if (!selectedPoints.includes(idx)) {
                 selectedPoints.push(idx);
@@ -395,8 +426,11 @@ function checkPattern() {
 function hideLockScreen() {
     const lockOverlay = document.getElementById('lockOverlay');
     if (lockOverlay) lockOverlay.remove();
-    document.body.classList.remove('locked-interface');
     isScreenLocked = false;
+    
+    // Reabilita todos os botões
+    enableAllButtons();
+    
     statusMessage.innerHTML = '✅ Tela destravada!';
     setTimeout(() => {
         if (statusMessage.innerHTML === '✅ Tela destravada!') statusMessage.innerHTML = '📁 Pronto para treinar';
