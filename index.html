@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-<title>Treino - Trava Total</title>
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meu Treino">
+<title>Meu Treino</title>
+<link rel="manifest" href="manifest.json">
+
 <style>
 * {
     box-sizing: border-box;
@@ -14,18 +20,35 @@ body {
     background: #0a0f1e;
     color: white;
     margin: 0;
-    padding: 16px;
+    padding: 0;
     min-height: 100vh;
+}
+@media (display-mode: standalone) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
 }
 .container {
     max-width: 900px;
     margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* PARTE FIXA NO TOPO - SEMPRE VISÍVEL */
+.fixed-header {
+    position: sticky;
+    top: 0;
+    background: #0a0f1e;
+    z-index: 100;
+    padding: 16px 16px 8px 16px;
 }
 .card {
     background: #141b2b;
     border-radius: 1.5rem;
     padding: 1.2rem;
-    margin-bottom: 1rem;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 .timer-display {
@@ -34,21 +57,21 @@ body {
     font-family: monospace;
     font-weight: bold;
     color: #facc15;
-    margin: 15px 0;
+    margin: 10px 0;
     letter-spacing: 4px;
 }
 .total-timer {
     text-align: right;
     font-size: 14px;
     color: #60a5fa;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     font-family: monospace;
 }
 .exercise-name {
     text-align: center;
     font-size: 26px;
     font-weight: bold;
-    margin-top: 10px;
+    margin-top: 5px;
 }
 .stage-category {
     text-align: center;
@@ -66,10 +89,10 @@ body {
     text-align: center;
     font-size: 14px;
     color: #facc15;
-    margin-top: 10px;
+    margin-top: 8px;
     background: #1e293b;
     display: inline-block;
-    padding: 5px 14px;
+    padding: 4px 12px;
     border-radius: 40px;
     width: auto;
     margin-left: auto;
@@ -80,7 +103,7 @@ body {
     background: #1e293b;
     border-radius: 20px;
     overflow: hidden;
-    margin-top: 18px;
+    margin: 12px 0;
 }
 .progress-fill {
     height: 100%;
@@ -91,64 +114,48 @@ body {
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 12px;
     flex-wrap: wrap;
 }
 button {
     border: none;
     border-radius: 60px;
-    padding: 10px 20px;
+    padding: 12px 24px;
     cursor: pointer;
     color: white;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 1rem;
     transition: transform 0.1s, opacity 0.2s;
 }
 button:active {
     transform: scale(0.96);
 }
-button.disabled-btn {
-    opacity: 0.5;
+button.disabled-btn, button:disabled {
+    opacity: 0.4;
     pointer-events: none !important;
 }
 .btn-primary { background: #2563eb; }
 .btn-danger { background: #dc2626; }
 .btn-success { background: #10b981; }
-.btn-lock { background: #8b5cf6; }
 
 .status {
-    margin-top: 14px;
+    margin-top: 10px;
     text-align: center;
     color: #94a3b8;
-    font-size: 13px;
+    font-size: 12px;
 }
-.import-json {
-    background: #0f172a;
-    border-radius: 1rem;
-    padding: 12px;
-    margin-bottom: 15px;
-    text-align: center;
-    transition: opacity 0.3s;
-}
-.import-json.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-.file-info {
-    margin-top: 8px;
-    font-size: 11px;
-    color: #64748b;
+
+/* PARTE ROLÁVEL - LISTA E IMPORTAR */
+.scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 16px 16px;
 }
 .exercise-list-card {
     background: #0f172a;
     border-radius: 1rem;
     padding: 12px;
-    margin-top: 15px;
-    transition: opacity 0.3s;
-}
-.exercise-list-card.disabled {
-    opacity: 0.5;
-    pointer-events: none;
+    margin-bottom: 15px;
 }
 .exercise-list-card h3 {
     margin: 0 0 12px 0;
@@ -159,8 +166,8 @@ button.disabled-btn {
     gap: 6px;
 }
 .exercise-list-container {
-    max-height: 260px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
 }
 .exercise-list-item {
     display: flex;
@@ -181,8 +188,26 @@ button.disabled-btn {
 .exercise-list-item.completed { opacity: 0.5; background: #0f1422; }
 .exercise-list-item.completed .ex-name { text-decoration: line-through; }
 
-/* TELA DE TRAVA COM PADRÃO */
-.lock-screen {
+.import-json {
+    background: #0f172a;
+    border-radius: 1rem;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    border: 1px solid #2563eb;
+}
+.import-json.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.file-info {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* TELA DE PADRÃO */
+.pattern-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -196,16 +221,16 @@ button.disabled-btn {
     justify-content: center;
     backdrop-filter: blur(12px);
 }
-.lock-header {
+.pattern-header {
     text-align: center;
     margin-bottom: 40px;
 }
-.lock-header h2 {
+.pattern-header h2 {
     font-size: 28px;
     margin-bottom: 8px;
     color: #facc15;
 }
-.lock-header p {
+.pattern-header p {
     font-size: 14px;
     color: #94a3b8;
 }
@@ -220,9 +245,6 @@ button.disabled-btn {
     aspect-ratio: 1;
     background: #1e293b;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
     transition: all 0.1s;
     border: 2px solid #334155;
@@ -232,14 +254,14 @@ button.disabled-btn {
     border-color: #60a5fa;
     transform: scale(1.05);
 }
-.lock-message {
+.pattern-message {
     text-align: center;
     margin-top: 30px;
     font-size: 16px;
     color: #ef4444;
     min-height: 50px;
 }
-.reset-pattern {
+.pattern-reset {
     background: #334155;
     margin-top: 20px;
     padding: 10px 24px;
@@ -247,51 +269,73 @@ button.disabled-btn {
     color: white;
     cursor: pointer;
 }
+
+.countdown {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 10001;
+}
+.countdown-number {
+    font-size: 140px;
+    font-weight: bold;
+    color: #facc15;
+}
+.countdown-text {
+    font-size: 24px;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card">
-        <div class="total-timer" id="totalTimerDisplay">⏱️ TOTAL: 00:00</div>
-        <div class="exercise-name" id="exerciseName">Carregue um treino</div>
-        <div class="stage-category" id="stageCategory"></div>
-        <div class="round-info" id="roundInfo"></div>
-        <div class="next-exercise" id="nextExercise"></div>
-        <div class="timer-display" id="timerDisplay">00:00</div>
-        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="controls">
-            <button class="btn-primary" id="startBtn">▶ INICIAR</button>
-            <button id="pauseBtn">⏸ PAUSAR</button>
-            <button class="btn-danger" id="resetBtn">⟳ RESETAR</button>
-            <button class="btn-lock" id="lockScreenBtn">🔒 TRAVAR TELA</button>
+    <!-- PARTE FIXA NO TOPO -->
+    <div class="fixed-header">
+        <div class="card">
+            <div class="total-timer" id="totalTimerDisplay">⏱️ TOTAL: 00:00</div>
+            <div class="exercise-name" id="exerciseName">Carregue um treino</div>
+            <div class="stage-category" id="stageCategory"></div>
+            <div class="round-info" id="roundInfo"></div>
+            <div class="next-exercise" id="nextExercise"></div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="controls">
+                <button class="btn-primary" id="startBtn">▶ INICIAR</button>
+                <button id="pauseBtn" class="btn-danger">⏸ PAUSAR</button>
+                <button class="btn-danger" id="resetBtn">⟳ RESETAR</button>
+            </div>
+            <div class="status" id="statusMessage">📁 Clique em SELECIONAR JSON abaixo</div>
         </div>
-        <div class="status" id="statusMessage">📁 Selecione um arquivo JSON</div>
     </div>
 
-    <div class="import-json" id="importJsonDiv">
-        <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
-        <button id="importJsonBtn" class="btn-primary">📂 SELECIONAR JSON</button>
-        <div class="file-info">Exemplo: { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }</div>
-    </div>
+    <!-- PARTE ROLÁVEL -->
+    <div class="scrollable-content">
+        <div class="exercise-list-card" id="exerciseListCard" style="display:none;">
+            <h3>📋 EXERCÍCIOS</h3>
+            <div class="exercise-list-container" id="exerciseListContainer"></div>
+        </div>
 
-    <div class="exercise-list-card" id="exerciseListCard" style="display:none;">
-        <h3>📋 EXERCÍCIOS</h3>
-        <div class="exercise-list-container" id="exerciseListContainer"></div>
+        <div class="import-json" id="importJsonDiv">
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
+            <button id="importJsonBtn" class="btn-primary">📂 SELECIONAR JSON</button>
+            <div class="file-info">Exemplo: { "aquecimento": [{"nome":"Polichinelo","segundos":60}] }</div>
+        </div>
     </div>
 </div>
 
 <script>
 // ==============================
-// PADRÃO DE DESBLOQUEIO (3x3)
-// Padrão: 1-2-3-6-9
+// PADRÃO (1-2-3-6-9)
 // ==============================
 const DEFAULT_PATTERN = [0, 1, 2, 5, 8];
 let selectedPoints = [];
-let isScreenLocked = false;
-let isTravaAtiva = false;  // Variável global de controle
+let isPatternActive = false;
 
-// Áudio e variáveis do treino
+// Variáveis do treino
 let aquecimento = [], treino = [], desaquecimento = [];
 let treinoRounds = 1, restBetweenRounds = 0, restAquecimentoToTreino = 5, restTreinoToDesaquecimento = 5;
 let fullWorkflow = [], currentStepIndex = 0, timeLeft = 0, timerInterval = null, isRunning = false;
@@ -310,82 +354,84 @@ const statusMessage = document.getElementById('statusMessage');
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
-const lockScreenBtn = document.getElementById('lockScreenBtn');
 const importJsonBtn = document.getElementById('importJsonBtn');
 const jsonFileInput = document.getElementById('jsonFileInput');
 const exerciseListCard = document.getElementById('exerciseListCard');
 const exerciseListContainer = document.getElementById('exerciseListContainer');
 const importJsonDiv = document.getElementById('importJsonDiv');
 
-// ========== FUNÇÕES DE TRAVA ==========
-function disableAllUI() {
-    isTravaAtiva = true;
+// ========== CONTROLE DE BOTÕES ==========
+function disableAllExceptPause() {
+    startBtn.disabled = true;
+    resetBtn.disabled = true;
+    importJsonBtn.disabled = true;
     startBtn.classList.add('disabled-btn');
-    pauseBtn.classList.add('disabled-btn');
     resetBtn.classList.add('disabled-btn');
     importJsonBtn.classList.add('disabled-btn');
-    lockScreenBtn.classList.add('disabled-btn');
     importJsonDiv.classList.add('disabled');
     exerciseListCard.classList.add('disabled');
+    pauseBtn.disabled = false;
+    pauseBtn.classList.remove('disabled-btn');
 }
 
-function enableAllUI() {
-    isTravaAtiva = false;
+function enableAllButtons() {
+    startBtn.disabled = false;
+    pauseBtn.disabled = false;
+    resetBtn.disabled = false;
+    importJsonBtn.disabled = false;
     startBtn.classList.remove('disabled-btn');
     pauseBtn.classList.remove('disabled-btn');
     resetBtn.classList.remove('disabled-btn');
     importJsonBtn.classList.remove('disabled-btn');
-    lockScreenBtn.classList.remove('disabled-btn');
     importJsonDiv.classList.remove('disabled');
     exerciseListCard.classList.remove('disabled');
 }
 
-function showLockScreen() {
-    if (isScreenLocked) return;
-    isScreenLocked = true;
+// ========== TELA DE PADRÃO ==========
+function showPatternModal(onSuccess) {
+    if (isPatternActive) return;
+    isPatternActive = true;
     selectedPoints = [];
     
-    // Desabilita toda a interface
-    disableAllUI();
+    const wasRunning = isRunning;
+    if (wasRunning) {
+        stopTimer();
+    }
     
-    // Criar overlay de trava
-    const lockOverlay = document.createElement('div');
-    lockOverlay.className = 'lock-screen';
-    lockOverlay.id = 'lockOverlay';
-    lockOverlay.innerHTML = `
-        <div class="lock-header">
-            <h2>🔒 TELA TRAVADA</h2>
-            <p>Desenhe o padrão para destravar</p>
+    const overlay = document.createElement('div');
+    overlay.className = 'pattern-overlay';
+    overlay.id = 'patternOverlay';
+    overlay.innerHTML = `
+        <div class="pattern-header">
+            <h2>🔒 CONFIRMAR PAUSA</h2>
+            <p>Desenhe o padrão para pausar</p>
         </div>
         <div class="pattern-container" id="patternContainer"></div>
-        <div class="lock-message" id="lockMessage"></div>
-        <button class="reset-pattern" id="resetPatternBtn">LIMPAR PADRÃO</button>
+        <div class="pattern-message" id="patternMessage"></div>
+        <button class="pattern-reset" id="patternResetBtn">LIMPAR PADRÃO</button>
     `;
-    document.body.appendChild(lockOverlay);
+    document.body.appendChild(overlay);
     
-    // Criar pontos do padrão 3x3
     const container = document.getElementById('patternContainer');
     for (let i = 0; i < 9; i++) {
         const dot = document.createElement('div');
         dot.className = 'pattern-dot';
         dot.dataset.index = i;
         dot.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!isScreenLocked) return;
             const idx = parseInt(dot.dataset.index);
             if (!selectedPoints.includes(idx)) {
                 selectedPoints.push(idx);
                 updatePatternDots();
-                checkPattern();
+                checkPattern(onSuccess, wasRunning);
             }
         });
         container.appendChild(dot);
     }
     
-    document.getElementById('resetPatternBtn').addEventListener('click', () => {
+    document.getElementById('patternResetBtn').addEventListener('click', () => {
         selectedPoints = [];
         updatePatternDots();
-        document.getElementById('lockMessage').innerHTML = '';
+        document.getElementById('patternMessage').innerHTML = '';
     });
 }
 
@@ -393,50 +439,30 @@ function updatePatternDots() {
     const dots = document.querySelectorAll('.pattern-dot');
     dots.forEach((dot, idx) => {
         dot.classList.remove('selected');
-        if (selectedPoints.includes(idx)) {
-            dot.classList.add('selected');
-        }
+        if (selectedPoints.includes(idx)) dot.classList.add('selected');
     });
 }
 
-function checkPattern() {
+function checkPattern(onSuccess, wasRunning) {
     if (selectedPoints.length === DEFAULT_PATTERN.length) {
         let isMatch = true;
         for (let i = 0; i < DEFAULT_PATTERN.length; i++) {
-            if (selectedPoints[i] !== DEFAULT_PATTERN[i]) {
-                isMatch = false;
-                break;
-            }
+            if (selectedPoints[i] !== DEFAULT_PATTERN[i]) { isMatch = false; break; }
         }
         if (isMatch) {
-            document.getElementById('lockMessage').innerHTML = '<span style="color:#10b981;">✅ Padrão correto! Destravando...</span>';
+            document.getElementById('patternMessage').innerHTML = '<span style="color:#10b981;">✅ Padrão correto! Pausando...</span>';
             setTimeout(() => {
-                hideLockScreen();
+                const overlay = document.getElementById('patternOverlay');
+                if (overlay) overlay.remove();
+                isPatternActive = false;
+                onSuccess(wasRunning);
             }, 500);
         } else {
-            document.getElementById('lockMessage').innerHTML = '<span style="color:#ef4444;">❌ Padrão incorreto! Tente novamente.</span>';
+            document.getElementById('patternMessage').innerHTML = '<span style="color:#ef4444;">❌ Padrão incorreto! Tente novamente.</span>';
             selectedPoints = [];
             updatePatternDots();
         }
-    } else if (selectedPoints.length > DEFAULT_PATTERN.length) {
-        document.getElementById('lockMessage').innerHTML = '<span style="color:#ef4444;">❌ Padrão incorreto! Tente novamente.</span>';
-        selectedPoints = [];
-        updatePatternDots();
     }
-}
-
-function hideLockScreen() {
-    const lockOverlay = document.getElementById('lockOverlay');
-    if (lockOverlay) lockOverlay.remove();
-    isScreenLocked = false;
-    
-    // Reabilita toda a interface
-    enableAllUI();
-    
-    statusMessage.innerHTML = '✅ Tela destravada!';
-    setTimeout(() => {
-        if (statusMessage.innerHTML === '✅ Tela destravada!') statusMessage.innerHTML = '📁 Pronto para treinar';
-    }, 1500);
 }
 
 // ========== FUNÇÕES DO TREINO ==========
@@ -455,7 +481,7 @@ function formatTimeToText(seconds) {
 }
 
 function speak(text) {
-    if (!audioActivated || !text || isTravaAtiva) return;
+    if (!audioActivated || !text) return;
     try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -466,7 +492,7 @@ function speak(text) {
 }
 
 function beep(freq=900, duration=.15) {
-    if (!audioActivated || isTravaAtiva) return;
+    if (!audioActivated) return;
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -493,21 +519,6 @@ function stopTimer() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
     isRunning = false;
-}
-
-function updateUINextExercise() {
-    if (currentStepIndex + 1 < fullWorkflow.length) {
-        const nextStep = fullWorkflow[currentStepIndex + 1];
-        const timeText = formatTimeToText(nextStep.seconds);
-        if (nextStep.type === 'rest') {
-            nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO, ${timeText}`;
-        } else {
-            nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name}, ${timeText}`;
-            if (nextStep.etapa === 'treino') nextExerciseSpan.textContent += ` (rodada ${nextStep.round})`;
-        }
-    } else {
-        nextExerciseSpan.textContent = `⏩ Último!`;
-    }
 }
 
 function renderExerciseList() {
@@ -559,21 +570,19 @@ function updateUI() {
     progressFill.style.width = `${(timeLeft / totalTime) * 100}%`;
     exerciseName.textContent = step.name;
     totalTimerDisplay.textContent = `⏱️ TOTAL: ${formatTime(totalTimeLeft)}`;
-    updateUINextExercise();
+    
+    if (currentStepIndex + 1 < fullWorkflow.length) {
+        const nextStep = fullWorkflow[currentStepIndex + 1];
+        const timeText = formatTimeToText(nextStep.seconds);
+        if (nextStep.type === 'rest') nextExerciseSpan.textContent = `⏩ Próximo: DESCANSO, ${timeText}`;
+        else nextExerciseSpan.textContent = `⏩ Próximo: ${nextStep.name}, ${timeText}`;
+    } else { nextExerciseSpan.textContent = `⏩ Último!`; }
+    
     renderExerciseList();
-    if (step.etapa === 'aquecimento') {
-        stageCategory.textContent = '🔥 AQUECIMENTO';
-        roundInfo.textContent = '';
-    } else if (step.etapa === 'treino') {
-        stageCategory.textContent = '💪 TREINO';
-        roundInfo.textContent = `Rodada ${step.round}/${treinoRounds}`;
-    } else if (step.etapa === 'desaquecimento') {
-        stageCategory.textContent = '🧘 DESAQUECIMENTO';
-        roundInfo.textContent = '';
-    } else if (step.type === 'rest') {
-        stageCategory.textContent = '⏸️ DESCANSO';
-        roundInfo.textContent = '';
-    }
+    if (step.etapa === 'aquecimento') { stageCategory.textContent = '🔥 AQUECIMENTO'; roundInfo.textContent = ''; }
+    else if (step.etapa === 'treino') { stageCategory.textContent = '💪 TREINO'; roundInfo.textContent = `Rodada ${step.round}/${treinoRounds}`; }
+    else if (step.etapa === 'desaquecimento') { stageCategory.textContent = '🧘 DESAQUECIMENTO'; roundInfo.textContent = ''; }
+    else if (step.type === 'rest') { stageCategory.textContent = '⏸️ DESCANSO'; roundInfo.textContent = ''; }
 }
 
 function announceNextIfNeeded() {
@@ -582,9 +591,7 @@ function announceNextIfNeeded() {
         const nextStep = fullWorkflow[currentStepIndex + 1];
         if (nextStep) {
             const timeText = formatTimeToText(nextStep.seconds);
-            let msg = '';
-            if (nextStep.type === 'rest') msg = `Próximo: descanso, ${timeText}`;
-            else msg = `Próximo: ${nextStep.name}, ${timeText}`;
+            let msg = nextStep.type === 'rest' ? `Próximo: descanso, ${timeText}` : `Próximo: ${nextStep.name}, ${timeText}`;
             speak(msg);
             statusMessage.innerHTML = `🔊 ${msg}`;
         }
@@ -600,18 +607,14 @@ function showCountdown(callback) {
     function update() {
         const numberDiv = overlay.querySelector('.countdown-number');
         numberDiv.textContent = count;
-        if (count > 0) { beep(); }
+        if (count > 0) beep();
         else { numberDiv.textContent = 'VAI!'; beep(1200, 0.4); }
     }
     update();
     const interval = setInterval(() => {
         count--;
         if (count >= 0) update();
-        else {
-            clearInterval(interval);
-            overlay.remove();
-            callback();
-        }
+        else { clearInterval(interval); overlay.remove(); callback(); }
     }, 1000);
 }
 
@@ -622,6 +625,8 @@ function startActualTimer() {
     hasAnnouncedNext = false;
     updateUI();
     isRunning = true;
+    disableAllExceptPause();
+    
     timerInterval = setInterval(() => {
         if (!isRunning) return;
         if (timeLeft > 0) {
@@ -645,6 +650,7 @@ function startActualTimer() {
                 speak("Treino finalizado!");
                 statusMessage.innerHTML = "🏆 TREINO FINALIZADO!";
                 beep(1200, 0.5);
+                enableAllButtons();
             }
         }
     }, 1000);
@@ -657,25 +663,27 @@ function startFirstExercise() {
 }
 
 function startTreino() {
-    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     if (!treinoCarregado) { statusMessage.innerHTML = "❌ Carregue um JSON primeiro!"; return; }
     if (currentStepIndex >= fullWorkflow.length) resetTreino();
     if (!isRunning && currentStepIndex < fullWorkflow.length) startFirstExercise();
 }
 
 function pauseTreino() {
-    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
-    if (!isRunning) return;
-    if (confirm("PAUSAR O TREINO?")) {
-        stopTimer();
-        window.speechSynthesis.cancel();
-        statusMessage.innerHTML = "⏸ Pausado";
-        speak("Treino pausado");
+    if (!isRunning) {
+        statusMessage.innerHTML = "Nenhum treino em andamento para pausar.";
+        return;
     }
+    showPatternModal((wasRunning) => {
+        stopTimer();
+        isRunning = false;
+        enableAllButtons();
+        window.speechSynthesis.cancel();
+        statusMessage.innerHTML = "⏸ Treino pausado";
+        speak("Treino pausado");
+    });
 }
 
 function resetTreino() {
-    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     if (!treinoCarregado) return;
     if (isRunning) {
         if (confirm("RESETAR O TREINO?")) {
@@ -687,6 +695,7 @@ function resetTreino() {
             totalTimeLeft = totalTimeSeconds;
             updateUI();
             statusMessage.innerHTML = "🔄 Resetado";
+            enableAllButtons();
             speak("Treino resetado");
         }
     } else {
@@ -698,6 +707,8 @@ function resetTreino() {
         totalTimeLeft = totalTimeSeconds;
         updateUI();
         statusMessage.innerHTML = "🔄 Resetado";
+        enableAllButtons();
+        speak("Treino resetado");
     }
 }
 
@@ -724,7 +735,6 @@ function rebuildWorkflow() {
 }
 
 function importFromJSON(jsonData) {
-    if (isTravaAtiva) { statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; return; }
     try {
         const data = JSON.parse(jsonData);
         aquecimento = (data.aquecimento || []).map(ex => ({ name: ex.nome || ex.name, seconds: ex.segundos || ex.seconds }));
@@ -744,15 +754,14 @@ function importFromJSON(jsonData) {
         updateUI();
         statusMessage.innerHTML = `✅ "${data.nome || 'Treino'}" carregado! Clique INICIAR.`;
         speak("Treino carregado");
-    } catch(e) { alert("Erro: " + e.message); }
+    } catch(e) { alert("Erro ao importar JSON: " + e.message); }
 }
 
 // ========== EVENTOS ==========
 startBtn.onclick = startTreino;
 pauseBtn.onclick = pauseTreino;
 resetBtn.onclick = resetTreino;
-lockScreenBtn.onclick = () => { showLockScreen(); };
-importJsonBtn.onclick = () => { if (!isTravaAtiva) jsonFileInput.click(); else statusMessage.innerHTML = "⚠️ Destrave a tela primeiro!"; };
+importJsonBtn.onclick = () => { jsonFileInput.click(); };
 jsonFileInput.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = ev => importFromJSON(ev.target.result); reader.readAsText(file); } };
 </script>
 </body>
