@@ -337,27 +337,6 @@ button.disabled-btn, button:disabled {
 
 <script>
 // ==============================
-// DESABILITAR PULL-TO-REFRESH
-// ==============================
-let startY = 0;
-
-document.addEventListener('touchstart', function(e) {
-    startY = e.touches[0].clientY;
-}, { passive: false });
-
-document.addEventListener('touchmove', function(e) {
-    const currentY = e.touches[0].clientY;
-    const scrollable = document.getElementById('scrollableContent');
-    const scrollTop = scrollable.scrollTop;
-    
-    // Se estiver no topo e tentar puxar para baixo, previne
-    if (currentY > startY && scrollTop === 0) {
-        e.preventDefault();
-        return false;
-    }
-}, { passive: false });
-
-// ==============================
 // PADRÃO (1-2-3-6-9)
 // ==============================
 const DEFAULT_PATTERN = [0, 1, 2, 5, 8];
@@ -614,13 +593,21 @@ function updateUI() {
     else if (step.type === 'rest') { stageCategory.textContent = '⏸️ DESCANSO'; roundInfo.textContent = ''; }
 }
 
+// ========== FUNÇÃO DE AVISO CORRIGIDA ==========
 function announceNextIfNeeded() {
+    // Avisa quando faltam 10 segundos para terminar QUALQUER bloco
     if (timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext) {
         hasAnnouncedNext = true;
         const nextStep = fullWorkflow[currentStepIndex + 1];
         if (nextStep) {
             const timeText = formatTimeToText(nextStep.seconds);
-            let msg = nextStep.type === 'rest' ? `Próximo: descanso, ${timeText}` : `Próximo: ${nextStep.name}, ${timeText}`;
+            let msg = '';
+            if (nextStep.type === 'rest') {
+                msg = `Próximo: descanso, ${timeText}`;
+            } else {
+                msg = `Próximo: ${nextStep.name}, ${timeText}`;
+                if (nextStep.etapa === 'treino') msg += `, rodada ${nextStep.round}`;
+            }
             speak(msg);
             statusMessage.innerHTML = `🔊 ${msg}`;
         }
@@ -647,11 +634,15 @@ function showCountdown(callback) {
     }, 1000);
 }
 
+// ========== TIMER PRINCIPAL CORRIGIDO ==========
 function startActualTimer() {
     if (timerInterval) stopTimer();
     if (currentStepIndex >= fullWorkflow.length) return;
-    timeLeft = fullWorkflow[currentStepIndex].seconds;
+    
+    // RESETA O AVISO PARA CADA NOVO BLOCO
     hasAnnouncedNext = false;
+    
+    timeLeft = fullWorkflow[currentStepIndex].seconds;
     updateUI();
     isRunning = true;
     disableAllExceptPause();
@@ -662,14 +653,21 @@ function startActualTimer() {
             timeLeft--;
             totalTimeLeft--;
             updateUI();
-            if (timeLeft === 10) announceNextIfNeeded();
+            
+            // AVISO AOS 10 SEGUNDOS (funciona para qualquer bloco)
+            if (timeLeft === 10) {
+                announceNextIfNeeded();
+            }
+            
             if (timeLeft === 3) beep();
             if (timeLeft === 2) beep();
             if (timeLeft === 1) beep();
         }
+        
         if (timeLeft === 0 && currentStepIndex < fullWorkflow.length) {
             stopTimer();
             isRunning = false;
+            
             if (currentStepIndex + 1 < fullWorkflow.length) {
                 currentStepIndex++;
                 startActualTimer();
