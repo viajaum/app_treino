@@ -792,17 +792,47 @@ function startFirstExercise() {
         msg = `Começamos com aquecimento: ${firstStep.name}, ${timeText}`;
     }
     
-    speak(msg);
     statusMessage.innerHTML = `🔊 ${msg}`;
     hasAnnouncedNext = true;
     
-    setTimeout(() => {
+    // Função para iniciar a contagem após o áudio terminar
+    const startCountdownAfterSpeech = () => {
         updateUI();
         showCountdown(() => { 
             hasAnnouncedNext = false;
             startActualTimer(); 
         });
-    }, 1500);
+    };
+    
+    // Tenta usar a API de síntese de voz com evento de término
+    if (audioActivated) {
+        try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(msg);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1;
+            
+            // Fallback: se por algum motivo o evento não disparar, inicia após 5 segundos
+            const fallbackTimer = setTimeout(() => {
+                utterance.onend = null; // Remove o evento para não iniciar duas vezes
+                startCountdownAfterSpeech();
+            }, 5000);
+            
+            // Quando o áudio terminar, inicia a contagem
+            utterance.onend = () => {
+                clearTimeout(fallbackTimer);
+                startCountdownAfterSpeech();
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        } catch(e) {
+            // Se der erro, usa um delay fixo de 2 segundos
+            setTimeout(startCountdownAfterSpeech, 2000);
+        }
+    } else {
+        // Se o áudio não está ativado, espera 1 segundo
+        setTimeout(startCountdownAfterSpeech, 1000);
+    }
 }
 
 function startTreino() {
