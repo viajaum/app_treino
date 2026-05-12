@@ -178,17 +178,37 @@ button.disabled-btn, button:disabled {
     padding: 8px 10px;
     border-bottom: 1px solid #1e293b;
     font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.exercise-list-item:hover {
+    background: #1e293b;
 }
 .exercise-list-item.current {
     background: #1e3a5f;
     border-radius: 12px;
     border-left: 3px solid #facc15;
+    cursor: default;
+}
+.exercise-list-item.completed {
+    opacity: 0.5;
+    background: #0f1422;
+    cursor: pointer;
+}
+.exercise-list-item.completed .ex-name {
+    text-decoration: line-through;
+}
+.exercise-list-item.blocked {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.exercise-list-card.disabled .exercise-list-item {
+    pointer-events: none;
+    cursor: not-allowed;
 }
 .exercise-list-item .ex-name { flex: 2; color: #e2e8f0; }
 .exercise-list-item .ex-time { color: #facc15; font-family: monospace; font-weight: bold; }
 .exercise-list-item .ex-status { width: 24px; text-align: center; }
-.exercise-list-item.completed { opacity: 0.5; background: #0f1422; }
-.exercise-list-item.completed .ex-name { text-decoration: line-through; }
 .import-json {
     background: #0f172a;
     border-radius: 1rem;
@@ -337,7 +357,7 @@ let treinoRounds = 1, restBetweenRounds = 0, restAquecimentoToTreino = 5, restTr
 let fullWorkflow = [], currentStepIndex = 0, timeLeft = 0, timerInterval = null, isRunning = false;
 let totalTimeSeconds = 0, totalTimeLeft = 0, hasAnnouncedNext = false, treinoCarregado = false;
 let audioActivated = false;
-let nextAnnounceTimer = null; // Timer para agendar aviso
+let nextAnnounceTimer = null;
 
 // DOM
 const timerDisplay = document.getElementById('timerDisplay');
@@ -369,6 +389,8 @@ function disableAllExceptPause() {
     exerciseListCard.classList.add('disabled');
     pauseBtn.disabled = false;
     pauseBtn.classList.remove('disabled-btn');
+    
+    renderExerciseList();
 }
 
 function enableAllButtons() {
@@ -382,6 +404,8 @@ function enableAllButtons() {
     importJsonBtn.classList.remove('disabled-btn');
     importJsonDiv.classList.remove('disabled');
     exerciseListCard.classList.remove('disabled');
+    
+    renderExerciseList();
 }
 
 // ========== TELA DE PADRÃO ==========
@@ -526,16 +550,28 @@ function renderExerciseList() {
     if (!fullWorkflow.length) { exerciseListCard.style.display = 'none'; return; }
     exerciseListCard.style.display = 'block';
     exerciseListContainer.innerHTML = '';
+    
     fullWorkflow.forEach((step, index) => {
         const item = document.createElement('div');
         item.className = 'exercise-list-item';
-        if (index === currentStepIndex) item.classList.add('current');
-        if (index < currentStepIndex) item.classList.add('completed');
+        
+        if (index === currentStepIndex) {
+            item.classList.add('current');
+        }
+        if (index < currentStepIndex) {
+            item.classList.add('completed');
+        }
+        
+        if (isRunning) {
+            item.classList.add('blocked');
+        }
+        
         const statusSpan = document.createElement('span');
         statusSpan.className = 'ex-status';
         if (index < currentStepIndex) statusSpan.textContent = '✅';
         else if (index === currentStepIndex) statusSpan.textContent = '▶';
         else statusSpan.textContent = '○';
+        
         const nameSpan = document.createElement('span');
         nameSpan.className = 'ex-name';
         let displayName = step.name;
@@ -544,14 +580,69 @@ function renderExerciseList() {
         else if (step.etapa === 'desaquecimento') displayName = `🧘 ${step.name}`;
         else if (step.type === 'rest') displayName = `⏸️ ${step.name}`;
         nameSpan.textContent = displayName;
+        
         const timeSpan = document.createElement('span');
         timeSpan.className = 'ex-time';
         timeSpan.textContent = formatTime(step.seconds);
+        
         item.appendChild(statusSpan);
         item.appendChild(nameSpan);
         item.appendChild(timeSpan);
+        
+        if (!isRunning) {
+            item.addEventListener('click', () => {
+                jumpToExercise(index);
+            });
+        }
+        
         exerciseListContainer.appendChild(item);
     });
+}
+
+function jumpToExercise(targetIndex) {
+    if (isRunning) {
+        statusMessage.innerHTML = "⛔ Pause o treino antes de pular!";
+        return;
+    }
+    
+    if (targetIndex < 0 || targetIndex >= fullWorkflow.length) return;
+    
+    if (targetIndex === currentStepIndex && !isRunning) {
+        statusMessage.innerHTML = "▶️ Já está neste exercício. Clique INICIAR.";
+        return;
+    }
+    
+    if (targetIndex > currentStepIndex) {
+        const skippedCount = targetIndex - currentStepIndex;
+        if (!confirm(`Pular ${skippedCount} exercício(s) e começar de "${fullWorkflow[targetIndex].name}"?`)) {
+            return;
+        }
+    } else if (targetIndex < currentStepIndex) {
+        if (!confirm(`Voltar para "${fullWorkflow[targetIndex].name}"? Isto irá reiniciar a partir deste ponto.`)) {
+            return;
+        }
+    }
+    
+    stopTimer();
+    isRunning = false;
+    window.speechSynthesis.cancel();
+    
+    currentStepIndex = targetIndex;
+    timeLeft = fullWorkflow[currentStepIndex].seconds;
+    hasAnnouncedNext = false;
+    
+    let remainingSeconds = 0;
+    for (let i = currentStepIndex; i < fullWorkflow.length; i++) {
+        remainingSeconds += fullWorkflow[i].seconds;
+    }
+    totalTimeLeft = remainingSeconds;
+    
+    updateUI();
+    enableAllButtons();
+    
+    const timeText = formatTimeToText(timeLeft);
+    statusMessage.innerHTML = `📍 Selecionado: ${fullWorkflow[currentStepIndex].name} (${timeText}) - Clique INICIAR`;
+    speak(`Selecionado: ${fullWorkflow[currentStepIndex].name}`);
 }
 
 function updateUI() {
@@ -586,7 +677,6 @@ function updateUI() {
     else if (step.type === 'rest') { stageCategory.textContent = '⏸️ DESCANSO'; roundInfo.textContent = ''; }
 }
 
-// ========== FUNÇÃO DE AVISO CORRIGIDA (COM SETTIMEOUT) ==========
 function announceNextIfNeeded() {
     if (hasAnnouncedNext) return;
     if (currentStepIndex + 1 >= fullWorkflow.length) return;
@@ -613,12 +703,9 @@ function announceNextIfNeeded() {
 function scheduleNextAnnounce() {
     const currentSeconds = fullWorkflow[currentStepIndex].seconds;
     
-    // Se o bloco atual tem 10 segundos ou menos, avisa imediatamente
     if (currentSeconds <= 10 && !hasAnnouncedNext) {
         announceNextIfNeeded();
-    } 
-    // Se tem mais de 10 segundos, agenda para avisar 10 segundos antes do fim
-    else if (currentSeconds > 10 && !hasAnnouncedNext) {
+    } else if (currentSeconds > 10 && !hasAnnouncedNext) {
         const delay = (currentSeconds - 10) * 1000;
         nextAnnounceTimer = setTimeout(() => {
             if (isRunning && !hasAnnouncedNext) {
@@ -648,12 +735,10 @@ function showCountdown(callback) {
     }, 1000);
 }
 
-// ========== TIMER PRINCIPAL CORRIGIDO ==========
 function startActualTimer() {
     if (timerInterval) stopTimer();
     if (currentStepIndex >= fullWorkflow.length) return;
     
-    // Limpa e reseta o aviso
     if (nextAnnounceTimer) clearTimeout(nextAnnounceTimer);
     hasAnnouncedNext = false;
     
@@ -662,7 +747,6 @@ function startActualTimer() {
     isRunning = true;
     disableAllExceptPause();
     
-    // Agenda o aviso 10 segundos antes do fim
     scheduleNextAnnounce();
     
     timerInterval = setInterval(() => {
@@ -710,12 +794,12 @@ function startFirstExercise() {
     
     speak(msg);
     statusMessage.innerHTML = `🔊 ${msg}`;
-    hasAnnouncedNext = true; // Evita anúncio duplicado
+    hasAnnouncedNext = true;
     
     setTimeout(() => {
         updateUI();
         showCountdown(() => { 
-            hasAnnouncedNext = false; // Libera os próximos avisos
+            hasAnnouncedNext = false;
             startActualTimer(); 
         });
     }, 1500);
