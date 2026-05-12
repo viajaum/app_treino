@@ -613,8 +613,12 @@ function announceNextIfNeeded() {
 function scheduleNextAnnounce() {
     const currentSeconds = fullWorkflow[currentStepIndex].seconds;
     
-    // Agendar aviso 10 segundos antes do fim (se o bloco tiver mais de 10 segundos)
-    if (currentSeconds > 10 && !hasAnnouncedNext) {
+    // Se o bloco atual tem 10 segundos ou menos, avisa imediatamente
+    if (currentSeconds <= 10 && !hasAnnouncedNext) {
+        announceNextIfNeeded();
+    } 
+    // Se tem mais de 10 segundos, agenda para avisar 10 segundos antes do fim
+    else if (currentSeconds > 10 && !hasAnnouncedNext) {
         const delay = (currentSeconds - 10) * 1000;
         nextAnnounceTimer = setTimeout(() => {
             if (isRunning && !hasAnnouncedNext) {
