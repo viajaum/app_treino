@@ -22,7 +22,6 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    /* IMPEDE PULL-TO-REFRESH */
     overflow: hidden;
     position: fixed;
     width: 100%;
@@ -43,8 +42,6 @@ body {
     flex-direction: column;
     overflow: hidden;
 }
-
-/* PARTE FIXA NO TOPO - SEMPRE VISÍVEL */
 .fixed-header {
     flex-shrink: 0;
     background: #0a0f1e;
@@ -143,15 +140,12 @@ button.disabled-btn, button:disabled {
 .btn-primary { background: #2563eb; }
 .btn-danger { background: #dc2626; }
 .btn-success { background: #10b981; }
-
 .status {
     margin-top: 10px;
     text-align: center;
     color: #94a3b8;
     font-size: 12px;
 }
-
-/* PARTE ROLÁVEL - CORRIGIDA */
 .scrollable-content {
     flex: 1;
     overflow-y: auto;
@@ -195,7 +189,6 @@ button.disabled-btn, button:disabled {
 .exercise-list-item .ex-status { width: 24px; text-align: center; }
 .exercise-list-item.completed { opacity: 0.5; background: #0f1422; }
 .exercise-list-item.completed .ex-name { text-decoration: line-through; }
-
 .import-json {
     background: #0f172a;
     border-radius: 1rem;
@@ -213,8 +206,6 @@ button.disabled-btn, button:disabled {
     font-size: 11px;
     color: #64748b;
 }
-
-/* TELA DE PADRÃO */
 .pattern-overlay {
     position: fixed;
     top: 0;
@@ -277,7 +268,6 @@ button.disabled-btn, button:disabled {
     color: white;
     cursor: pointer;
 }
-
 .countdown {
     position: fixed;
     inset: 0;
@@ -301,7 +291,6 @@ button.disabled-btn, button:disabled {
 <body>
 
 <div class="container">
-    <!-- PARTE FIXA NO TOPO -->
     <div class="fixed-header">
         <div class="card">
             <div class="total-timer" id="totalTimerDisplay">⏱️ TOTAL: 00:00</div>
@@ -320,7 +309,6 @@ button.disabled-btn, button:disabled {
         </div>
     </div>
 
-    <!-- PARTE ROLÁVEL -->
     <div class="scrollable-content" id="scrollableContent">
         <div class="exercise-list-card" id="exerciseListCard" style="display:none;">
             <h3>📋 EXERCÍCIOS</h3>
@@ -349,6 +337,7 @@ let treinoRounds = 1, restBetweenRounds = 0, restAquecimentoToTreino = 5, restTr
 let fullWorkflow = [], currentStepIndex = 0, timeLeft = 0, timerInterval = null, isRunning = false;
 let totalTimeSeconds = 0, totalTimeLeft = 0, hasAnnouncedNext = false, treinoCarregado = false;
 let audioActivated = false;
+let nextAnnounceTimer = null; // Timer para agendar aviso
 
 // DOM
 const timerDisplay = document.getElementById('timerDisplay');
@@ -527,6 +516,10 @@ function stopTimer() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
     isRunning = false;
+    if (nextAnnounceTimer) {
+        clearTimeout(nextAnnounceTimer);
+        nextAnnounceTimer = null;
+    }
 }
 
 function renderExerciseList() {
@@ -593,24 +586,41 @@ function updateUI() {
     else if (step.type === 'rest') { stageCategory.textContent = '⏸️ DESCANSO'; roundInfo.textContent = ''; }
 }
 
-// ========== FUNÇÃO DE AVISO CORRIGIDA ==========
+// ========== FUNÇÃO DE AVISO CORRIGIDA (COM SETTIMEOUT) ==========
 function announceNextIfNeeded() {
-    // Avisa quando faltam 10 segundos para terminar QUALQUER bloco
-    if (timeLeft === 10 && currentStepIndex + 1 < fullWorkflow.length && !hasAnnouncedNext) {
-        hasAnnouncedNext = true;
-        const nextStep = fullWorkflow[currentStepIndex + 1];
-        if (nextStep) {
-            const timeText = formatTimeToText(nextStep.seconds);
-            let msg = '';
-            if (nextStep.type === 'rest') {
-                msg = `Próximo: descanso, ${timeText}`;
-            } else {
-                msg = `Próximo: ${nextStep.name}, ${timeText}`;
-                if (nextStep.etapa === 'treino') msg += `, rodada ${nextStep.round}`;
+    if (hasAnnouncedNext) return;
+    if (currentStepIndex + 1 >= fullWorkflow.length) return;
+    
+    const nextStep = fullWorkflow[currentStepIndex + 1];
+    if (!nextStep) return;
+    
+    hasAnnouncedNext = true;
+    
+    const timeText = formatTimeToText(nextStep.seconds);
+    let msg = '';
+    
+    if (nextStep.type === 'rest') {
+        msg = `Próximo: descanso, ${timeText}`;
+    } else {
+        msg = `Próximo: ${nextStep.name}, ${timeText}`;
+        if (nextStep.etapa === 'treino') msg += `, rodada ${nextStep.round}`;
+    }
+    
+    speak(msg);
+    statusMessage.innerHTML = `🔊 ${msg}`;
+}
+
+function scheduleNextAnnounce() {
+    const currentSeconds = fullWorkflow[currentStepIndex].seconds;
+    
+    // Agendar aviso 10 segundos antes do fim (se o bloco tiver mais de 10 segundos)
+    if (currentSeconds > 10 && !hasAnnouncedNext) {
+        const delay = (currentSeconds - 10) * 1000;
+        nextAnnounceTimer = setTimeout(() => {
+            if (isRunning && !hasAnnouncedNext) {
+                announceNextIfNeeded();
             }
-            speak(msg);
-            statusMessage.innerHTML = `🔊 ${msg}`;
-        }
+        }, delay);
     }
 }
 
@@ -639,7 +649,8 @@ function startActualTimer() {
     if (timerInterval) stopTimer();
     if (currentStepIndex >= fullWorkflow.length) return;
     
-    // RESETA O AVISO PARA CADA NOVO BLOCO
+    // Limpa e reseta o aviso
+    if (nextAnnounceTimer) clearTimeout(nextAnnounceTimer);
     hasAnnouncedNext = false;
     
     timeLeft = fullWorkflow[currentStepIndex].seconds;
@@ -647,17 +658,16 @@ function startActualTimer() {
     isRunning = true;
     disableAllExceptPause();
     
+    // Agenda o aviso 10 segundos antes do fim
+    scheduleNextAnnounce();
+    
     timerInterval = setInterval(() => {
         if (!isRunning) return;
+        
         if (timeLeft > 0) {
             timeLeft--;
             totalTimeLeft--;
             updateUI();
-            
-            // AVISO AOS 10 SEGUNDOS (funciona para qualquer bloco)
-            if (timeLeft === 10) {
-                announceNextIfNeeded();
-            }
             
             if (timeLeft === 3) beep();
             if (timeLeft === 2) beep();
