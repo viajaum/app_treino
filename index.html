@@ -699,8 +699,26 @@ function startActualTimer() {
 
 function startFirstExercise() {
     if (currentStepIndex >= fullWorkflow.length) return;
-    updateUI();
-    showCountdown(() => { startActualTimer(); });
+    
+    const firstStep = fullWorkflow[currentStepIndex];
+    const timeText = formatTimeToText(firstStep.seconds);
+    let msg = `Começamos com: ${firstStep.name}, ${timeText}`;
+    
+    if (firstStep.etapa === 'aquecimento') {
+        msg = `Começamos com aquecimento: ${firstStep.name}, ${timeText}`;
+    }
+    
+    speak(msg);
+    statusMessage.innerHTML = `🔊 ${msg}`;
+    hasAnnouncedNext = true; // Evita anúncio duplicado
+    
+    setTimeout(() => {
+        updateUI();
+        showCountdown(() => { 
+            hasAnnouncedNext = false; // Libera os próximos avisos
+            startActualTimer(); 
+        });
+    }, 1500);
 }
 
 function startTreino() {
